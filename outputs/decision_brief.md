@@ -1,6 +1,6 @@
 # Trading Bot Decision Brief
 
-Last updated UTC: 2026-07-27T20:20:03.352943+00:00
+Last updated UTC: 2026-07-27T20:47:39.740082+00:00
 
 Main answer: Do not use the original stable rules live. They are quarantined.
 
@@ -17,7 +17,7 @@ Main answer: Do not use the original stable rules live. They are quarantined.
 
 - Original stable rules: QUARANTINED. Keep them blocked from new entries while the loss remains beyond the safety limit.
 - Experimental pair candidates: REVIEW BEFORE TINY PILOT. This is still useful, but it needs more closed paper trades.
-- Experimental pair signal drought: Experimental pair is not frozen: it has 0 exact matches right now, 4 near miss(es), and 10 relaxed research candidate(s). It is probably too selective for fast evidence because it only watches BOOM300N/CRASH300N on 15m.
+- Experimental pair signal drought: Experimental pair is not frozen: it has 0 exact matches right now, 3 near miss(es), and 10 relaxed research candidate(s). It is probably too selective for fast evidence because it only watches BOOM300N/CRASH300N on 15m.
 - Advanced sniper candidates: REVIEW BEFORE TINY PILOT. This is the stricter research track built from the 10 accuracy layers.
 - Real-money trading: NOT READY.
 

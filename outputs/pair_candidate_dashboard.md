@@ -1,6 +1,6 @@
 # Paper Stable Rules Dashboard
 
-Last updated UTC: 2026-07-27T20:19:44.271068+00:00
+Last updated UTC: 2026-07-27T20:36:03.825974+00:00
 
 This is a paper-trading monitor only. It does not place real trades.
 
@@ -23,8 +23,8 @@ This is a paper-trading monitor only. It does not place real trades.
 
 | symbol | timeframe | decision | side | entry | stop_loss | take_profit | reason |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| BOOM300N | 15m | no_trade | hold | 989.124 |  |  | no trade signal |
-| CRASH300N | 15m | no_trade | hold | 2098.988 |  |  | no trade signal |
+| BOOM300N | 15m | no_trade | hold | 990.072 |  |  | no trade signal |
+| CRASH300N | 15m | no_trade | hold | 2084.267 |  |  | no trade signal |
 
 ## Open Positions
 
@@ -51,11 +51,11 @@ No open paper positions.
 | --- | --- | --- | --- | --- | --- |
 | BOOM300N | 15m | blocked_guard | 15 | 15 | 2026-07-17T05:29:02.999061+00:00 |
 | BOOM300N | 15m | blocked_rule | 47 | 47 | 2026-07-27T15:14:48.886276+00:00 |
-| BOOM300N | 15m | no_trade | 977 | 978 | 2026-07-27T20:19:44.037584+00:00 |
+| BOOM300N | 15m | no_trade | 978 | 979 | 2026-07-27T20:36:03.783568+00:00 |
 | BOOM300N | 15m | paper_order | 11 | 11 | 2026-07-26T20:11:24.173619+00:00 |
 | CRASH300N | 15m | blocked_guard | 39 | 39 | 2026-07-23T21:27:59.804651+00:00 |
 | CRASH300N | 15m | blocked_rule | 24 | 24 | 2026-07-27T12:17:31.443299+00:00 |
-| CRASH300N | 15m | no_trade | 975 | 976 | 2026-07-27T20:19:44.037584+00:00 |
+| CRASH300N | 15m | no_trade | 976 | 977 | 2026-07-27T20:36:03.783568+00:00 |
 | CRASH300N | 15m | paper_order | 12 | 12 | 2026-07-25T02:54:28.606027+00:00 |
 
 ## What To Run Next

@@ -1,6 +1,6 @@
 # Trading Bot Monitor Overview
 
-Last updated UTC: 2026-07-27T20:20:03.353440+00:00
+Last updated UTC: 2026-07-27T20:47:39.741977+00:00
 
 This is the single summary for the paper tracks. None of these tracks places real trades.
 
@@ -8,10 +8,10 @@ This is the single summary for the paper tracks. None of these tracks places rea
 
 | monitor | last_run_utc | age_minutes | latest_decisions | journal_rows | paper_orders | open_positions | closed_trades | closed_pnl | readiness |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Original stable rules | 2026-07-27T20:19:26.113872+00:00 | 0.6 | BOOM300N:no_trade, CRASH300N:no_trade | 2130 | 422 | 0 | 9 | -134.75120968391016 | NOT READY FOR LIVE TRADING |
-| Experimental pair candidates | 2026-07-27T20:19:44.271068+00:00 | 0.3 | BOOM300N:no_trade, CRASH300N:no_trade | 2102 | 23 | 0 | 23 | 161.68789167326113 | READY FOR TINY LIVE PILOT |
-| Advanced sniper candidates | 2026-07-27T20:19:46.453137+00:00 | 0.3 | BOOM300N:no_trade, CRASH300N:no_trade | 1938 | 19 | 0 | 19 | 153.60831494341085 | READY FOR TINY LIVE PILOT |
-| Boom/Crash expansion candidates | 2026-07-27T20:16:44.180838+00:00 | 3.3 | BOOM1000:blocked_guard, BOOM1000:no_trade, BOOM1000:no_trade, BOOM150N:no_trade, BOOM150N:no_trade, BOOM300N:no_trade, BOOM300N:no_trade, BOOM300N:no_trade, BOOM50:no_trade, BOOM500:no_trade, BOOM500:no_trade, BOOM500:no_trade, BOOM600:no_trade, BOOM600:no_trade, BOOM600:no_trade, BOOM900:no_trade, BOOM900:no_trade, BOOM900:no_trade, CRASH1000:no_trade, CRASH1000:no_trade, CRASH1000:no_trade, CRASH150N:no_trade, CRASH150N:no_trade, CRASH300N:no_trade, CRASH300N:no_trade, CRASH300N:no_trade, CRASH50:no_trade, CRASH500:no_trade, CRASH500:no_trade, CRASH500:no_trade, CRASH500:no_trade, CRASH600:no_trade, CRASH600:no_trade, CRASH600:no_trade, CRASH900:no_trade, CRASH900:no_trade, CRASH900:no_trade | 3626 | 16 | 0 | 4 | 10.709697611500605 | NOT READY FOR LIVE TRADING |
+| Original stable rules | 2026-07-27T20:35:42.773593+00:00 | 11.9 | BOOM300N:no_trade, CRASH300N:no_trade | 2132 | 422 | 0 | 9 | -134.75120968391016 | NOT READY FOR LIVE TRADING |
+| Experimental pair candidates | 2026-07-27T20:36:03.825974+00:00 | 11.6 | BOOM300N:no_trade, CRASH300N:no_trade | 2104 | 23 | 0 | 23 | 161.68789167326113 | READY FOR TINY LIVE PILOT |
+| Advanced sniper candidates | 2026-07-27T20:36:06.012300+00:00 | 11.6 | BOOM300N:no_trade, CRASH300N:no_trade | 1940 | 19 | 0 | 19 | 153.60831494341085 | READY FOR TINY LIVE PILOT |
+| Boom/Crash expansion candidates | 2026-07-27T20:47:38.894131+00:00 | 0.0 | BOOM1000:blocked_guard, BOOM1000:no_trade, BOOM1000:no_trade, BOOM150N:no_trade, BOOM150N:no_trade, BOOM300N:no_trade, BOOM300N:no_trade, BOOM300N:no_trade, BOOM50:no_trade, BOOM500:no_trade, BOOM500:no_trade, BOOM500:no_trade, BOOM600:no_trade, BOOM600:no_trade, BOOM600:no_trade, BOOM900:no_trade, BOOM900:no_trade, BOOM900:no_trade, CRASH1000:no_trade, CRASH1000:no_trade, CRASH1000:no_trade, CRASH150N:no_trade, CRASH150N:no_trade, CRASH300N:no_trade, CRASH300N:no_trade, CRASH300N:no_trade, CRASH50:no_trade, CRASH500:no_trade, CRASH500:no_trade, CRASH500:no_trade, CRASH500:no_trade, CRASH600:no_trade, CRASH600:no_trade, CRASH600:no_trade, CRASH900:no_trade, CRASH900:no_trade, CRASH900:no_trade | 3700 | 16 | 0 | 4 | 10.709697611500605 | NOT READY FOR LIVE TRADING |
 
 ## What Each Track Means
 
@@ -22,7 +22,7 @@ This is the single summary for the paper tracks. None of these tracks places rea
 
 ## Experimental Pair No-Trade Check
 
-Experimental pair is not frozen: it has 0 exact matches right now, 4 near miss(es), and 10 relaxed research candidate(s). It is probably too selective for fast evidence because it only watches BOOM300N/CRASH300N on 15m.
+Experimental pair is not frozen: it has 0 exact matches right now, 3 near miss(es), and 10 relaxed research candidate(s). It is probably too selective for fast evidence because it only watches BOOM300N/CRASH300N on 15m.
 
 ## Next Action
 

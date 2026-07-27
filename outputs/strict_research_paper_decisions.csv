@@ -1,2 +1,2 @@
 symbol,timeframe,timestamp,decision,side,confidence,reason,entry,stop_loss,take_profit,quantity,risk_amount,paper_order_id,refresh_status,refresh_error,refreshed_candles
-CRASH300N,15m,2026-07-27 20:15:00+00:00,no_trade,hold,0.0,no trade signal,2099.163,,,,,,not_requested,,
+CRASH300N,15m,2026-07-27 20:30:00+00:00,no_trade,hold,0.0,no trade signal,2084.576,,,,,,not_requested,,

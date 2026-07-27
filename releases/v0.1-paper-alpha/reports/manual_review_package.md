@@ -1,6 +1,6 @@
 # Manual Review Package
 
-Last updated UTC: 2026-07-27T20:20:04.782105+00:00
+Last updated UTC: 2026-07-27T20:47:41.152172+00:00
 
 This is the human review gate. It analyzes paper trades only and does not approve real-money trading.
 

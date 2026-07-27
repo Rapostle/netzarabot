@@ -1,6 +1,6 @@
 # Shadow Re-Test Report
 
-Last updated UTC: 2026-07-27T20:20:06.733908+00:00
+Last updated UTC: 2026-07-27T20:47:43.289530+00:00
 
 This compares what each track would do on the latest candles.
 

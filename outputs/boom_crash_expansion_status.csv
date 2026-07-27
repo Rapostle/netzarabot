@@ -1,10 +1,10 @@
 metric,value
-last_run_utc,2026-07-27T20:16:44.180838+00:00
+last_run_utc,2026-07-27T20:47:38.894131+00:00
 latest_decisions,"BOOM1000:blocked_guard, BOOM1000:no_trade, BOOM1000:no_trade, BOOM150N:no_trade, BOOM150N:no_trade, BOOM300N:no_trade, BOOM300N:no_trade, BOOM300N:no_trade, BOOM50:no_trade, BOOM500:no_trade, BOOM500:no_trade, BOOM500:no_trade, BOOM600:no_trade, BOOM600:no_trade, BOOM600:no_trade, BOOM900:no_trade, BOOM900:no_trade, BOOM900:no_trade, CRASH1000:no_trade, CRASH1000:no_trade, CRASH1000:no_trade, CRASH150N:no_trade, CRASH150N:no_trade, CRASH300N:no_trade, CRASH300N:no_trade, CRASH300N:no_trade, CRASH50:no_trade, CRASH500:no_trade, CRASH500:no_trade, CRASH500:no_trade, CRASH500:no_trade, CRASH600:no_trade, CRASH600:no_trade, CRASH600:no_trade, CRASH900:no_trade, CRASH900:no_trade, CRASH900:no_trade"
 latest_paper_signals,0
 latest_paper_orders,0
 latest_blocked_signals,1
-journal_rows,3626
+journal_rows,3700
 open_positions,0
 closed_trades,4
 closed_pnl,10.709697611500605

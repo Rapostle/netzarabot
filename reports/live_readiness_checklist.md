@@ -1,6 +1,6 @@
 # Live-Readiness Checklist
 
-Last updated UTC: 2026-07-27T20:20:09.250726+00:00
+Last updated UTC: 2026-07-27T20:47:51.485458+00:00
 
 This is the final gate. It intentionally blocks live trading until the paper evidence is strong.
 

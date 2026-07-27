@@ -1,6 +1,6 @@
 # Expansion Monitor Health Guard
 
-Last updated UTC: 2026-07-27T20:20:08.334698+00:00
+Last updated UTC: 2026-07-27T20:47:46.446922+00:00
 
 This decides whether it is sensible to start a separate expansion paper monitor.
 

@@ -1,6 +1,6 @@
 # Strict Research Lane
 
-Last updated UTC: 2026-07-27T20:20:05.549804+00:00
+Last updated UTC: 2026-07-27T20:47:41.810043+00:00
 
 This lane tests fresh strict candidates separately. It does not approve live trading and does not unfreeze the main paper rules.
 

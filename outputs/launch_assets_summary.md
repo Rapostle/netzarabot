@@ -1,6 +1,6 @@
 # Launch Assets Summary
 
-Last updated UTC: 2026-07-27T20:20:11.901585+00:00
+Last updated UTC: 2026-07-27T20:47:55.755263+00:00
 
 - Clickable local app server: `work/local_app_server.py`
 - Start local app: `work/start_local_app.sh`

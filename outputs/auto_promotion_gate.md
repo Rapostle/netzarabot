@@ -1,6 +1,6 @@
 # Auto-Promotion Gate
 
-Last updated UTC: 2026-07-27T20:20:06.712747+00:00
+Last updated UTC: 2026-07-27T20:47:43.256507+00:00
 
 This file decides what each paper track is allowed to become. It does not place trades.
 

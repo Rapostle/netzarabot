@@ -1,6 +1,6 @@
 # Subscription / Licensing Plan
 
-Last updated UTC: 2026-07-27T20:20:10.253435+00:00
+Last updated UTC: 2026-07-27T20:47:53.175817+00:00
 
 How to make money when people use the bot:
 

@@ -1,6 +1,6 @@
 # Real Broker Safety Layer
 
-Last updated UTC: 2026-07-27T20:20:10.253673+00:00
+Last updated UTC: 2026-07-27T20:47:53.176084+00:00
 
 Current live verdict: MANUAL REVIEW ONLY
 

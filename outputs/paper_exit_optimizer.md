@@ -1,6 +1,6 @@
 # Paper Exit Optimizer
 
-Last updated UTC: 2026-07-27T20:20:07.199577+00:00
+Last updated UTC: 2026-07-27T20:47:44.304390+00:00
 
 This checks whether simple fixed-R exits would have beaten the actual paper exit on recent closed trades.
 

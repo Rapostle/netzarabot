@@ -1,6 +1,6 @@
 # Backtest vs Paper Comparison
 
-Last updated UTC: 2026-07-27T20:20:10.252664+00:00
+Last updated UTC: 2026-07-27T20:47:53.174793+00:00
 
 This compares research/backtest claims with actual paper behavior. Paper evidence wins.
 

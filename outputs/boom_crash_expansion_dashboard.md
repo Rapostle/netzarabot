@@ -1,6 +1,6 @@
 # Paper Stable Rules Dashboard
 
-Last updated UTC: 2026-07-27T20:16:44.180838+00:00
+Last updated UTC: 2026-07-27T20:47:38.894131+00:00
 
 This is a paper-trading monitor only. It does not place real trades.
 
@@ -58,12 +58,12 @@ This is a paper-trading monitor only. It does not place real trades.
 
 | symbol | timeframe | decision | side | entry | stop_loss | take_profit | reason |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| BOOM1000 | 15m | blocked_guard | sell | 14574.605 | 14628.84992857143 | 14509.511085714284 | stable_promoted_rules: stable promoted rule BCX0005: atr_regime+bb_width_regime is atr_mid_low & bb_expanded | blocked by guard: stale candle 26491.7m old |
+| BOOM1000 | 15m | blocked_guard | sell | 14574.605 | 14628.84992857143 | 14509.511085714284 | stable_promoted_rules: stable promoted rule BCX0005: atr_regime+bb_width_regime is atr_mid_low & bb_expanded | blocked by guard: stale candle 26522.6m old |
 | BOOM1000 | 30m | no_trade | hold | 14574.475 |  |  | no trade signal |
 | BOOM1000 | 5m | no_trade | hold | 14468.733 |  |  | no trade signal |
 | BOOM150N | 15m | no_trade | hold | 9516.40289 |  |  | no trade signal |
 | BOOM150N | 30m | no_trade | hold | 9516.36086 |  |  | no trade signal |
-| BOOM300N | 15m | no_trade | hold | 1071.473 |  |  | no trade signal |
+| BOOM300N | 15m | no_trade | hold | 990.267 |  |  | no trade signal |
 | BOOM300N | 1m | no_trade | hold | 1071.485 |  |  | no trade signal |
 | BOOM300N | 5m | no_trade | hold | 1107.23 |  |  | no trade signal |
 | BOOM50 | 30m | no_trade | hold | 106083.503 |  |  | no trade signal |
@@ -81,7 +81,7 @@ This is a paper-trading monitor only. It does not place real trades.
 | CRASH1000 | 5m | no_trade | hold | 5889.971 |  |  | no trade signal |
 | CRASH150N | 15m | no_trade | hold | 9758.97177 |  |  | no trade signal |
 | CRASH150N | 30m | no_trade | hold | 9758.9956 |  |  | no trade signal |
-| CRASH300N | 15m | no_trade | hold | 1566.719 |  |  | no trade signal |
+| CRASH300N | 15m | no_trade | hold | 2083.91 |  |  | no trade signal |
 | CRASH300N | 1m | no_trade | hold | 1566.649 |  |  | no trade signal |
 | CRASH300N | 5m | no_trade | hold | 1551.397 |  |  | no trade signal |
 | CRASH50 | 30m | no_trade | hold | 98622.065 |  |  | no trade signal |
@@ -113,51 +113,51 @@ No open paper positions.
 
 | symbol | timeframe | decision | runs | rows | last_seen |
 | --- | --- | --- | --- | --- | --- |
-| BOOM1000 | 15m | blocked_guard | 94 | 94 | 2026-07-27T20:16:44.122466+00:00 |
+| BOOM1000 | 15m | blocked_guard | 96 | 96 | 2026-07-27T20:47:38.818505+00:00 |
 | BOOM1000 | 15m | no_trade | 1 | 1 | 2026-07-12T00:20:55.911345+00:00 |
 | BOOM1000 | 15m | paper_order | 3 | 3 | 2026-07-12T00:49:35.865607+00:00 |
-| BOOM1000 | 30m | no_trade | 98 | 98 | 2026-07-27T20:16:44.122466+00:00 |
-| BOOM1000 | 5m | no_trade | 96 | 96 | 2026-07-27T20:16:44.122466+00:00 |
+| BOOM1000 | 30m | no_trade | 100 | 100 | 2026-07-27T20:47:38.818505+00:00 |
+| BOOM1000 | 5m | no_trade | 98 | 98 | 2026-07-27T20:47:38.818505+00:00 |
 | BOOM1000 | 5m | paper_order | 2 | 2 | 2026-07-12T00:49:35.865607+00:00 |
-| BOOM150N | 15m | no_trade | 98 | 98 | 2026-07-27T20:16:44.122466+00:00 |
-| BOOM150N | 30m | no_trade | 98 | 98 | 2026-07-27T20:16:44.122466+00:00 |
+| BOOM150N | 15m | no_trade | 100 | 100 | 2026-07-27T20:47:38.818505+00:00 |
+| BOOM150N | 30m | no_trade | 100 | 100 | 2026-07-27T20:47:38.818505+00:00 |
 | BOOM300N | 15m | blocked_guard | 17 | 17 | 2026-07-13T05:29:17.186653+00:00 |
-| BOOM300N | 15m | no_trade | 77 | 77 | 2026-07-27T20:16:44.122466+00:00 |
+| BOOM300N | 15m | no_trade | 79 | 79 | 2026-07-27T20:47:38.818505+00:00 |
 | BOOM300N | 15m | paper_order | 4 | 4 | 2026-07-27T16:24:16.800987+00:00 |
-| BOOM300N | 1m | no_trade | 98 | 98 | 2026-07-27T20:16:44.122466+00:00 |
-| BOOM300N | 5m | no_trade | 98 | 98 | 2026-07-27T20:16:44.122466+00:00 |
-| BOOM50 | 30m | no_trade | 98 | 98 | 2026-07-27T20:16:44.122466+00:00 |
-| BOOM500 | 15m | no_trade | 98 | 98 | 2026-07-27T20:16:44.122466+00:00 |
-| BOOM500 | 30m | no_trade | 98 | 98 | 2026-07-27T20:16:44.122466+00:00 |
-| BOOM500 | 5m | no_trade | 98 | 98 | 2026-07-27T20:16:44.122466+00:00 |
-| BOOM600 | 15m | no_trade | 98 | 98 | 2026-07-27T20:16:44.122466+00:00 |
-| BOOM600 | 30m | no_trade | 98 | 98 | 2026-07-27T20:16:44.122466+00:00 |
-| BOOM600 | 5m | no_trade | 98 | 98 | 2026-07-27T20:16:44.122466+00:00 |
-| BOOM900 | 15m | no_trade | 98 | 98 | 2026-07-27T20:16:44.122466+00:00 |
-| BOOM900 | 30m | no_trade | 98 | 98 | 2026-07-27T20:16:44.122466+00:00 |
-| BOOM900 | 5m | no_trade | 97 | 97 | 2026-07-27T20:16:44.122466+00:00 |
+| BOOM300N | 1m | no_trade | 100 | 100 | 2026-07-27T20:47:38.818505+00:00 |
+| BOOM300N | 5m | no_trade | 100 | 100 | 2026-07-27T20:47:38.818505+00:00 |
+| BOOM50 | 30m | no_trade | 100 | 100 | 2026-07-27T20:47:38.818505+00:00 |
+| BOOM500 | 15m | no_trade | 100 | 100 | 2026-07-27T20:47:38.818505+00:00 |
+| BOOM500 | 30m | no_trade | 100 | 100 | 2026-07-27T20:47:38.818505+00:00 |
+| BOOM500 | 5m | no_trade | 100 | 100 | 2026-07-27T20:47:38.818505+00:00 |
+| BOOM600 | 15m | no_trade | 100 | 100 | 2026-07-27T20:47:38.818505+00:00 |
+| BOOM600 | 30m | no_trade | 100 | 100 | 2026-07-27T20:47:38.818505+00:00 |
+| BOOM600 | 5m | no_trade | 100 | 100 | 2026-07-27T20:47:38.818505+00:00 |
+| BOOM900 | 15m | no_trade | 100 | 100 | 2026-07-27T20:47:38.818505+00:00 |
+| BOOM900 | 30m | no_trade | 100 | 100 | 2026-07-27T20:47:38.818505+00:00 |
+| BOOM900 | 5m | no_trade | 99 | 99 | 2026-07-27T20:47:38.818505+00:00 |
 | BOOM900 | 5m | paper_order | 1 | 1 | 2026-07-12T00:49:35.865607+00:00 |
-| CRASH1000 | 15m | no_trade | 98 | 98 | 2026-07-27T20:16:44.122466+00:00 |
-| CRASH1000 | 30m | no_trade | 98 | 98 | 2026-07-27T20:16:44.122466+00:00 |
-| CRASH1000 | 5m | no_trade | 98 | 98 | 2026-07-27T20:16:44.122466+00:00 |
-| CRASH150N | 15m | no_trade | 98 | 98 | 2026-07-27T20:16:44.122466+00:00 |
-| CRASH150N | 30m | no_trade | 95 | 95 | 2026-07-27T20:16:44.122466+00:00 |
+| CRASH1000 | 15m | no_trade | 100 | 100 | 2026-07-27T20:47:38.818505+00:00 |
+| CRASH1000 | 30m | no_trade | 100 | 100 | 2026-07-27T20:47:38.818505+00:00 |
+| CRASH1000 | 5m | no_trade | 100 | 100 | 2026-07-27T20:47:38.818505+00:00 |
+| CRASH150N | 15m | no_trade | 100 | 100 | 2026-07-27T20:47:38.818505+00:00 |
+| CRASH150N | 30m | no_trade | 97 | 97 | 2026-07-27T20:47:38.818505+00:00 |
 | CRASH150N | 30m | paper_order | 3 | 3 | 2026-07-12T00:20:55.911345+00:00 |
-| CRASH300N | 15m | no_trade | 98 | 98 | 2026-07-27T20:16:44.122466+00:00 |
-| CRASH300N | 1m | no_trade | 98 | 98 | 2026-07-27T20:16:44.122466+00:00 |
-| CRASH300N | 5m | no_trade | 98 | 98 | 2026-07-27T20:16:44.122466+00:00 |
-| CRASH50 | 30m | no_trade | 98 | 98 | 2026-07-27T20:16:44.122466+00:00 |
-| CRASH500 | 15m | no_trade | 95 | 95 | 2026-07-27T20:16:44.122466+00:00 |
+| CRASH300N | 15m | no_trade | 100 | 100 | 2026-07-27T20:47:38.818505+00:00 |
+| CRASH300N | 1m | no_trade | 100 | 100 | 2026-07-27T20:47:38.818505+00:00 |
+| CRASH300N | 5m | no_trade | 100 | 100 | 2026-07-27T20:47:38.818505+00:00 |
+| CRASH50 | 30m | no_trade | 100 | 100 | 2026-07-27T20:47:38.818505+00:00 |
+| CRASH500 | 15m | no_trade | 97 | 97 | 2026-07-27T20:47:38.818505+00:00 |
 | CRASH500 | 15m | paper_order | 3 | 3 | 2026-07-12T00:49:35.865607+00:00 |
-| CRASH500 | 1m | no_trade | 98 | 98 | 2026-07-27T20:16:44.122466+00:00 |
-| CRASH500 | 30m | no_trade | 98 | 98 | 2026-07-27T20:16:44.122466+00:00 |
-| CRASH500 | 5m | no_trade | 98 | 98 | 2026-07-27T20:16:44.122466+00:00 |
-| CRASH600 | 15m | no_trade | 98 | 98 | 2026-07-27T20:16:44.122466+00:00 |
-| CRASH600 | 30m | no_trade | 98 | 98 | 2026-07-27T20:16:44.122466+00:00 |
-| CRASH600 | 5m | no_trade | 98 | 98 | 2026-07-27T20:16:44.122466+00:00 |
-| CRASH900 | 15m | no_trade | 98 | 98 | 2026-07-27T20:16:44.122466+00:00 |
-| CRASH900 | 30m | no_trade | 98 | 98 | 2026-07-27T20:16:44.122466+00:00 |
-| CRASH900 | 5m | no_trade | 98 | 98 | 2026-07-27T20:16:44.122466+00:00 |
+| CRASH500 | 1m | no_trade | 100 | 100 | 2026-07-27T20:47:38.818505+00:00 |
+| CRASH500 | 30m | no_trade | 100 | 100 | 2026-07-27T20:47:38.818505+00:00 |
+| CRASH500 | 5m | no_trade | 100 | 100 | 2026-07-27T20:47:38.818505+00:00 |
+| CRASH600 | 15m | no_trade | 100 | 100 | 2026-07-27T20:47:38.818505+00:00 |
+| CRASH600 | 30m | no_trade | 100 | 100 | 2026-07-27T20:47:38.818505+00:00 |
+| CRASH600 | 5m | no_trade | 100 | 100 | 2026-07-27T20:47:38.818505+00:00 |
+| CRASH900 | 15m | no_trade | 100 | 100 | 2026-07-27T20:47:38.818505+00:00 |
+| CRASH900 | 30m | no_trade | 100 | 100 | 2026-07-27T20:47:38.818505+00:00 |
+| CRASH900 | 5m | no_trade | 100 | 100 | 2026-07-27T20:47:38.818505+00:00 |
 
 ## What To Run Next
 

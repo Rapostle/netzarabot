@@ -1,6 +1,6 @@
 # Family-Specific Risk Profiles
 
-Last updated UTC: 2026-07-27T20:20:09.204047+00:00
+Last updated UTC: 2026-07-27T20:47:51.425964+00:00
 
 These are paper risk profiles. They are not live-money settings yet.
 

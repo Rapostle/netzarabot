@@ -1,6 +1,6 @@
 # Candidate Promotion Queue
 
-Last updated UTC: 2026-07-27T20:20:08.405521+00:00
+Last updated UTC: 2026-07-27T20:47:46.736604+00:00
 
 Nothing here is live-approved. This only organizes what should be watched next.
 

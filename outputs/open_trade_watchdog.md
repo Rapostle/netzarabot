@@ -1,6 +1,6 @@
 # Open Trade Watchdog
 
-Last updated UTC: 2026-07-27T20:20:09.036824+00:00
+Last updated UTC: 2026-07-27T20:47:51.152078+00:00
 
 This watches open paper trades for progress toward target, stop pressure, and stuck behavior.
 

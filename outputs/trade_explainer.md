@@ -1,6 +1,6 @@
 # Trade Explainer
 
-Last updated UTC: 2026-07-27T20:20:06.725145+00:00
+Last updated UTC: 2026-07-27T20:47:43.278812+00:00
 
 ## Latest Decisions
 

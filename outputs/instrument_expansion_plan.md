@@ -1,6 +1,6 @@
 # Instrument Expansion Plan
 
-Last updated UTC: 2026-07-27T20:20:07.202642+00:00
+Last updated UTC: 2026-07-27T20:47:44.309562+00:00
 
 The app should expand only from rules that survive the sniper gate, not from losing tracks.
 

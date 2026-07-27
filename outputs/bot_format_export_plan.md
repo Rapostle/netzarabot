@@ -1,6 +1,6 @@
 # Bot Format / Export Plan
 
-Last updated UTC: 2026-07-27T20:20:10.253178+00:00
+Last updated UTC: 2026-07-27T20:47:53.175502+00:00
 
 Recommended final format: Web dashboard + Python Deriv engine first.
 

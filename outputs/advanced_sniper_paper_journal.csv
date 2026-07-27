@@ -1937,3 +1937,5 @@ paper-20260727T200330Z,2026-07-27T20:03:30.328488+00:00,BOOM300N,15m,2026-07-09 
 paper-20260727T200330Z,2026-07-27T20:03:30.328488+00:00,CRASH300N,15m,2026-07-09 10:45:00+00:00,no_trade,hold,0.0,no trade signal,1566.719,,,,,,not_requested,,,local_copy,5000,
 paper-20260727T201946Z,2026-07-27T20:19:46.406034+00:00,BOOM300N,15m,2026-07-27 20:15:00+00:00,no_trade,hold,0.0,no trade signal,989.355,,,,,,not_requested,,,local_copy,5000,
 paper-20260727T201946Z,2026-07-27T20:19:46.406034+00:00,CRASH300N,15m,2026-07-27 20:15:00+00:00,no_trade,hold,0.0,no trade signal,2098.587,,,,,,not_requested,,,local_copy,5000,
+paper-20260727T203605Z,2026-07-27T20:36:05.965013+00:00,BOOM300N,15m,2026-07-27 20:30:00+00:00,no_trade,hold,0.0,no trade signal,990.267,,,,,,not_requested,,,local_copy,5000,
+paper-20260727T203605Z,2026-07-27T20:36:05.965013+00:00,CRASH300N,15m,2026-07-27 20:30:00+00:00,no_trade,hold,0.0,no trade signal,2083.91,,,,,,not_requested,,,local_copy,5000,

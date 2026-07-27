@@ -2101,3 +2101,5 @@ paper-20260727T200327Z,2026-07-27T20:03:27.609876+00:00,BOOM300N,15m,2026-07-09 
 paper-20260727T200327Z,2026-07-27T20:03:27.609876+00:00,CRASH300N,15m,2026-07-09 10:45:00+00:00,no_trade,hold,0.0,no trade signal,1566.719,,,,,,not_requested,,,fallback_local,5000,"[Errno 8] nodename nor servname provided, or not known"
 paper-20260727T201944Z,2026-07-27T20:19:44.037584+00:00,BOOM300N,15m,2026-07-27 20:15:00+00:00,no_trade,hold,0.0,no trade signal,989.124,,,,,,not_requested,,,refreshed,5000,
 paper-20260727T201944Z,2026-07-27T20:19:44.037584+00:00,CRASH300N,15m,2026-07-27 20:15:00+00:00,no_trade,hold,0.0,no trade signal,2098.988,,,,,,not_requested,,,refreshed,5000,
+paper-20260727T203603Z,2026-07-27T20:36:03.783568+00:00,BOOM300N,15m,2026-07-27 20:30:00+00:00,no_trade,hold,0.0,no trade signal,990.072,,,,,,not_requested,,,refreshed,5000,
+paper-20260727T203603Z,2026-07-27T20:36:03.783568+00:00,CRASH300N,15m,2026-07-27 20:30:00+00:00,no_trade,hold,0.0,no trade signal,2084.267,,,,,,not_requested,,,refreshed,5000,

@@ -1,6 +1,6 @@
 # Best Track Leaderboard
 
-Last updated UTC: 2026-07-27T20:20:08.335083+00:00
+Last updated UTC: 2026-07-27T20:47:46.453892+00:00
 
 This ranks the current paper tracks. It is paper-only and should not be treated as live approval.
 

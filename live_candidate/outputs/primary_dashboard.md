@@ -1,6 +1,6 @@
 # Paper Stable Rules Dashboard
 
-Last updated UTC: 2026-07-27T20:23:51.211421+00:00
+Last updated UTC: 2026-07-27T20:39:02.980291+00:00
 
 This is a paper-trading monitor only. It does not place real trades.
 
@@ -22,7 +22,7 @@ This is a paper-trading monitor only. It does not place real trades.
 
 | symbol | timeframe | decision | side | entry | stop_loss | take_profit | reason |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| CRASH300N | 15m | no_trade | hold | 2100.869 |  |  | no trade signal |
+| CRASH300N | 15m | no_trade | hold | 2087.624 |  |  | no trade signal |
 
 ## Open Positions
 
@@ -36,7 +36,7 @@ No closed paper trades yet.
 
 | symbol | timeframe | decision | runs | rows | last_seen |
 | --- | --- | --- | --- | --- | --- |
-| CRASH300N | 15m | no_trade | 26 | 26 | 2026-07-27T20:23:51.182747+00:00 |
+| CRASH300N | 15m | no_trade | 27 | 27 | 2026-07-27T20:39:02.953287+00:00 |
 
 ## What To Run Next
 

@@ -1,6 +1,6 @@
 # Rule Scorecard
 
-Last updated UTC: 2026-07-27T20:20:09.201239+00:00
+Last updated UTC: 2026-07-27T20:47:51.424409+00:00
 
 This ranks rules by actual paper behavior, not only backtests.
 

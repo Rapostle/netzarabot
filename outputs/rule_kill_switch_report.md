@@ -1,6 +1,6 @@
 # Rule Kill-Switch Report
 
-Last updated UTC: 2026-07-27T20:20:08.394061+00:00
+Last updated UTC: 2026-07-27T20:47:46.694294+00:00
 
 This recommends which paper rules should be frozen or killed. The matching blocklist is used by paper monitoring.
 

@@ -1,6 +1,6 @@
 # Go-Live Readiness
 
-Last updated UTC: 2026-07-27T20:16:44.180838+00:00
+Last updated UTC: 2026-07-27T20:47:38.894131+00:00
 
 Verdict: NOT READY FOR LIVE TRADING
 
@@ -10,7 +10,7 @@ This gate is intentionally strict. It is meant to protect the account, not make 
 
 | check | status | detail |
 | --- | --- | --- |
-| Enough paper-monitor runs | pass | 98/30 runs |
+| Enough paper-monitor runs | pass | 100/30 runs |
 | Rules produced paper orders | pass | 16 historical order rows |
 | Enough closed paper trades | fail | 4/10 closed trades |
 | Closed paper PnL is positive | pass | 10.71 minimum 0.00 |
@@ -18,7 +18,7 @@ This gate is intentionally strict. It is meant to protect the account, not make 
 
 ## Paper Results
 
-- Paper monitor runs: 98
+- Paper monitor runs: 100
 - Paper order rows: 16
 - Open paper positions: 0
 - Closed paper trades: 4
