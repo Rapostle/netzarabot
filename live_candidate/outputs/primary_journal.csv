@@ -1,0 +1,27 @@
+run_id,run_recorded_at_utc,symbol,timeframe,timestamp,decision,side,confidence,reason,entry,stop_loss,take_profit,quantity,risk_amount,paper_order_id,refresh_status,refresh_error,refreshed_candles,refresh_status_manifest,refresh_candles,refresh_error_manifest
+paper-20260727T135431Z,2026-07-27T13:54:31.038736+00:00,CRASH300N,15m,2026-07-09 10:45:00+00:00,no_trade,hold,0.0,no trade signal,1566.719,,,,,,not_requested,,,fallback_local,5000,"[Errno 8] nodename nor servname provided, or not known"
+paper-20260727T141903Z,2026-07-27T14:19:03.390601+00:00,CRASH300N,15m,2026-07-27 14:15:00+00:00,no_trade,hold,0.0,no trade signal,2081.498,,,,,,not_requested,,,refreshed,5000,
+paper-20260727T143412Z,2026-07-27T14:34:12.451863+00:00,CRASH300N,15m,2026-07-27 14:30:00+00:00,no_trade,hold,0.0,no trade signal,2080.341,,,,,,not_requested,,,refreshed,5000,
+paper-20260727T144920Z,2026-07-27T14:49:20.204180+00:00,CRASH300N,15m,2026-07-27 14:45:00+00:00,no_trade,hold,0.0,no trade signal,2089.888,,,,,,not_requested,,,refreshed,5000,
+paper-20260727T150428Z,2026-07-27T15:04:28.184611+00:00,CRASH300N,15m,2026-07-27 15:00:00+00:00,no_trade,hold,0.0,no trade signal,2097.22,,,,,,not_requested,,,refreshed,5000,
+paper-20260727T151936Z,2026-07-27T15:19:36.956787+00:00,CRASH300N,15m,2026-07-27 15:15:00+00:00,no_trade,hold,0.0,no trade signal,2079.966,,,,,,not_requested,,,refreshed,5000,
+paper-20260727T153448Z,2026-07-27T15:34:48.472113+00:00,CRASH300N,15m,2026-07-27 15:30:00+00:00,no_trade,hold,0.0,no trade signal,2081.158,,,,,,not_requested,,,refreshed,5000,
+paper-20260727T154956Z,2026-07-27T15:49:56.899785+00:00,CRASH300N,15m,2026-07-27 15:45:00+00:00,no_trade,hold,0.0,no trade signal,2082.245,,,,,,not_requested,,,refreshed,5000,
+paper-20260727T160507Z,2026-07-27T16:05:07.209533+00:00,CRASH300N,15m,2026-07-27 16:00:00+00:00,no_trade,hold,0.0,no trade signal,2074.983,,,,,,not_requested,,,refreshed,5000,
+paper-20260727T162016Z,2026-07-27T16:20:16.364618+00:00,CRASH300N,15m,2026-07-27 16:15:00+00:00,no_trade,hold,0.0,no trade signal,2076.527,,,,,,not_requested,,,refreshed,5000,
+paper-20260727T163521Z,2026-07-27T16:35:21.522561+00:00,CRASH300N,15m,2026-07-09 10:45:00+00:00,no_trade,hold,0.0,no trade signal,1566.719,,,,,,not_requested,,,fallback_local,5000,"[Errno 8] nodename nor servname provided, or not known"
+paper-20260727T165027Z,2026-07-27T16:50:27.327288+00:00,CRASH300N,15m,2026-07-09 10:45:00+00:00,no_trade,hold,0.0,no trade signal,1566.719,,,,,,not_requested,,,fallback_local,5000,"[Errno 8] nodename nor servname provided, or not known"
+paper-20260727T170537Z,2026-07-27T17:05:37.565957+00:00,CRASH300N,15m,2026-07-27 17:00:00+00:00,no_trade,hold,0.0,no trade signal,2088.782,,,,,,not_requested,,,refreshed,5000,
+paper-20260727T172046Z,2026-07-27T17:20:46.171279+00:00,CRASH300N,15m,2026-07-27 17:15:00+00:00,no_trade,hold,0.0,no trade signal,2081.598,,,,,,not_requested,,,refreshed,5000,
+paper-20260727T173551Z,2026-07-27T17:35:51.341016+00:00,CRASH300N,15m,2026-07-27 17:15:00+00:00,no_trade,hold,0.0,no trade signal,2080.146,,,,,,not_requested,,,fallback_local,5000,"[Errno 8] nodename nor servname provided, or not known"
+paper-20260727T175059Z,2026-07-27T17:50:59.078365+00:00,CRASH300N,15m,2026-07-27 17:45:00+00:00,no_trade,hold,0.0,no trade signal,2086.935,,,,,,not_requested,,,refreshed,5000,
+paper-20260727T180608Z,2026-07-27T18:06:08.327433+00:00,CRASH300N,15m,2026-07-27 18:00:00+00:00,no_trade,hold,0.0,no trade signal,2081.277,,,,,,not_requested,,,refreshed,5000,
+paper-20260727T182115Z,2026-07-27T18:21:15.956096+00:00,CRASH300N,15m,2026-07-27 18:15:00+00:00,no_trade,hold,0.0,no trade signal,2080.309,,,,,,not_requested,,,refreshed,5000,
+paper-20260727T183624Z,2026-07-27T18:36:24.196552+00:00,CRASH300N,15m,2026-07-27 18:30:00+00:00,no_trade,hold,0.0,no trade signal,2094.13,,,,,,not_requested,,,refreshed,5000,
+paper-20260727T185132Z,2026-07-27T18:51:32.286021+00:00,CRASH300N,15m,2026-07-27 18:45:00+00:00,no_trade,hold,0.0,no trade signal,2077.834,,,,,,not_requested,,,refreshed,5000,
+paper-20260727T190640Z,2026-07-27T19:06:40.774908+00:00,CRASH300N,15m,2026-07-27 19:00:00+00:00,no_trade,hold,0.0,no trade signal,2085.385,,,,,,not_requested,,,refreshed,5000,
+paper-20260727T192146Z,2026-07-27T19:21:46.298387+00:00,CRASH300N,15m,2026-07-09 10:45:00+00:00,no_trade,hold,0.0,no trade signal,1566.719,,,,,,not_requested,,,fallback_local,5000,"[Errno 8] nodename nor servname provided, or not known"
+paper-20260727T193654Z,2026-07-27T19:36:54.066086+00:00,CRASH300N,15m,2026-07-27 19:30:00+00:00,no_trade,hold,0.0,no trade signal,2112.113,,,,,,not_requested,,,refreshed,5000,
+paper-20260727T195329Z,2026-07-27T19:53:29.355218+00:00,CRASH300N,15m,2026-07-27 19:45:00+00:00,no_trade,hold,0.0,no trade signal,2116.73,,,,,,not_requested,,,fallback_local,5000,timed out
+paper-20260727T200840Z,2026-07-27T20:08:40.455253+00:00,CRASH300N,15m,2026-07-27 20:00:00+00:00,no_trade,hold,0.0,no trade signal,2121.642,,,,,,not_requested,,,refreshed,5000,
+paper-20260727T202351Z,2026-07-27T20:23:51.182747+00:00,CRASH300N,15m,2026-07-27 20:15:00+00:00,no_trade,hold,0.0,no trade signal,2100.869,,,,,,not_requested,,,refreshed,5000,

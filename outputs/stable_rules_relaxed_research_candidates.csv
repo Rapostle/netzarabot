@@ -1,0 +1,15 @@
+rule_id,symbol,timeframe,source_rule_id,suggested_side,relaxed_feature,relaxed_condition,feature,condition,trades,win_rate,profit_factor,expectancy,total_return,passes_research_floor
+RELAXED_SR007_bb_position,BOOM300N,15m,SR007,buy,bb_position,below_lower_band_area,bb_position,below_lower_band_area,1219,0.5397867104183757,1.5462603283188894,0.0032732473095111745,3.9900884702941215,True
+RELAXED_SR001_bb_position,BOOM300N,15m,SR001,buy,bb_position,below_lower_band_area,bb_position,below_lower_band_area,1219,0.5397867104183757,1.5462603283188894,0.0032732473095111745,3.9900884702941215,True
+RELAXED_SR006_bb_position,BOOM300N,15m,SR006,buy,bb_position,below_lower_band_area,bb_position,below_lower_band_area,1219,0.5397867104183757,1.5462603283188894,0.0032732473095111745,3.9900884702941215,True
+RELAXED_SR006_rsi_zone,BOOM300N,15m,SR006,buy,rsi_zone,rsi_oversold,rsi_zone,rsi_oversold,699,0.5293276108726752,1.3491054554950068,0.0021796173716053043,1.5235525427521077,True
+RELAXED_SR003_bb_width_regime,BOOM300N,15m,SR003,buy,bb_width_regime,bb_expanded,bb_width_regime,bb_expanded,1244,0.5112540192926045,1.2410910910180386,0.001622769781412233,2.0187256080768177,True
+RELAXED_SR011_atr_regime,CRASH300N,15m,SR011,buy,atr_regime,atr_low,atr_regime,atr_low,1239,0.5504439063761097,1.2334104635972656,0.001539743204832493,1.907741830787459,True
+RELAXED_SR001_atr_regime,BOOM300N,15m,SR001,buy,atr_regime,atr_mid_low,atr_regime,atr_mid_low,1246,0.49759229534510435,1.1809754381551447,0.0013257087400924113,1.6518330901551446,False
+RELAXED_SR011_rsi_zone,CRASH300N,15m,SR011,buy,rsi_zone,rsi_high,rsi_zone,rsi_high,1395,0.5261648745519714,1.1313012984170134,0.000895095568037112,1.2486583174117711,False
+RELAXED_SR003_macd_hist_slope,BOOM300N,15m,SR003,buy,macd_hist_slope,macd_rising,macd_hist_slope,macd_rising,2360,0.48135593220338985,1.0818564069621743,0.0006322614396922664,1.4921369976737486,False
+RELAXED_SR007_bb_width_regime,BOOM300N,15m,SR007,buy,bb_width_regime,bb_normal_high,bb_width_regime,bb_normal_high,1237,0.47534357316087306,1.0337509969577887,0.0002551529690347379,0.3156242226959708,False
+RELAXED_SR017_rsi_zone,CRASH300N,15m,SR017,buy,rsi_zone,rsi_low,rsi_zone,rsi_low,1280,0.5375,1.005618902020945,4.162154298770898e-05,0.053275575024267496,False
+RELAXED_SR010_lower_wick,CRASH300N,15m,SR010,sell,lower_wick,small_lower_wick,lower_wick,small_lower_wick,3297,0.47831361844100695,0.9789835880930636,-0.00016180587571756107,-0.5334739722407988,False
+RELAXED_SR017_trend_zone,CRASH300N,15m,SR017,buy,trend_zone,strong_uptrend,trend_zone,strong_uptrend,2281,0.5151249451994739,0.9527236095616884,-0.0003746695249165079,-0.8546211863345545,False
+RELAXED_SR010_bb_position,CRASH300N,15m,SR010,sell,bb_position,above_upper_band_area,bb_position,above_upper_band_area,1252,0.46246006389776356,0.8166943180616647,-0.0015079974037429265,-1.888012749486144,False

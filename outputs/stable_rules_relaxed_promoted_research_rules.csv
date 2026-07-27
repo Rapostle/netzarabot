@@ -1,0 +1,5 @@
+rule_id,symbol,timeframe,suggested_side,feature,condition,trades,total_return,win_rate,profit_factor,expectancy,symbol_rule_rank,promotion_status,source_rule_id
+RELAXED_SR007_bb_position,BOOM300N,15m,buy,bb_position,below_lower_band_area,1219,3.9900884702941215,0.5397867104183757,1.5462603283188894,0.0032732473095111745,1,research_relaxed,SR007
+RELAXED_SR006_rsi_zone,BOOM300N,15m,buy,rsi_zone,rsi_oversold,699,1.5235525427521077,0.5293276108726752,1.3491054554950068,0.0021796173716053043,2,research_relaxed,SR006
+RELAXED_SR003_bb_width_regime,BOOM300N,15m,buy,bb_width_regime,bb_expanded,1244,2.0187256080768177,0.5112540192926045,1.2410910910180386,0.001622769781412233,3,research_relaxed,SR003
+RELAXED_SR011_atr_regime,CRASH300N,15m,buy,atr_regime,atr_low,1239,1.907741830787459,0.5504439063761097,1.2334104635972656,0.001539743204832493,1,research_relaxed,SR011

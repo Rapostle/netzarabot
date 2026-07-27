@@ -1,0 +1,21 @@
+track,rule,closed,wins,losses,win_rate,pnl,avg,worst,best,review_note
+Experimental pair candidates,PAIR017,4,4,0,100.0%,91.06,22.76,1.27,35.71,needs more rule evidence
+Experimental pair candidates,PAIR006,2,2,0,100.0%,61.90,30.95,26.25,35.65,needs more rule evidence
+Experimental pair candidates,PAIR023,3,2,1,66.7%,41.71,13.90,-30.29,36.00,needs more rule evidence
+Experimental pair candidates,PAIR002,3,2,1,66.7%,12.51,4.17,-30.28,21.59,needs more rule evidence
+Experimental pair candidates,PAIR005,3,2,1,66.7%,5.51,1.84,-30.32,35.69,needs more rule evidence
+Experimental pair candidates,PAIR024,2,1,1,50.0%,5.36,2.68,-30.33,35.69,needs more rule evidence
+Experimental pair candidates,PAIR001,2,0,2,0.0%,-12.95,-6.48,-11.10,-1.85,needs more rule evidence
+Experimental pair candidates,PAIR019,3,2,1,66.7%,-13.12,-4.37,-30.29,11.72,needs more rule evidence
+Experimental pair candidates,PAIR016,1,0,1,0.0%,-30.29,-30.29,-30.29,-30.29,needs more rule evidence
+Advanced sniper candidates,PAIR017,4,4,0,100.0%,97.39,24.35,7.05,35.71,needs more rule evidence
+Advanced sniper candidates,PAIR024,3,2,1,66.7%,23.67,7.89,-30.33,35.69,needs more rule evidence
+Advanced sniper candidates,PAIR006,2,1,1,50.0%,21.11,10.56,-5.41,26.53,needs more rule evidence
+Advanced sniper candidates,PAIR002,3,2,1,66.7%,12.50,4.17,-30.28,21.63,needs more rule evidence
+Advanced sniper candidates,PAIR023,2,1,1,50.0%,5.71,2.86,-30.29,36.00,needs more rule evidence
+Advanced sniper candidates,PAIR001,2,1,1,50.0%,5.40,2.70,-30.32,35.71,needs more rule evidence
+Advanced sniper candidates,PAIR019,3,2,1,66.7%,-12.18,-4.06,-30.31,11.50,needs more rule evidence
+Boom/Crash expansion candidates,BCX0051,1,1,0,100.0%,21.80,21.80,21.80,21.80,needs more rule evidence
+Boom/Crash expansion candidates,BCX0005,1,1,0,100.0%,18.61,18.61,18.61,18.61,needs more rule evidence
+Boom/Crash expansion candidates,BCX0048,1,1,0,100.0%,0.30,0.30,0.30,0.30,needs more rule evidence
+Boom/Crash expansion candidates,BCX0021,1,0,1,0.0%,-30.00,-30.00,-30.00,-30.00,needs more rule evidence

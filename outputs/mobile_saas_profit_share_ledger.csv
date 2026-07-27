@@ -1,0 +1,6 @@
+id,user_id,period_start_utc,period_end_utc,gross_profit_usd,carried_loss_usd,net_profit_after_carry_usd,performance_fee_percent,fee_due_usd,status,created_at_utc
+1,2,2026-07-27T15:35:00.967359+00:00,pending_period_close,0.0,0.0,0.0,20.0,0.0,tracking_only_not_billable,2026-07-27T15:35:00.967359+00:00
+2,2,2026-07-27T16:12:55.332199+00:00,pending_period_close,0.0,0.0,0.0,20.0,0.0,tracking_only_not_billable,2026-07-27T16:12:55.332199+00:00
+3,2,2026-07-27T16:32:36.119696+00:00,pending_period_close,0.0,0.0,0.0,20.0,0.0,tracking_only_not_billable,2026-07-27T16:32:36.119696+00:00
+4,2,2026-07-27T16:57:31.700675+00:00,pending_period_close,0.0,0.0,0.0,20.0,0.0,tracking_only_not_billable,2026-07-27T16:57:31.700675+00:00
+5,2,2026-07-27T17:21:32.856008+00:00,pending_period_close,0.0,0.0,0.0,20.0,0.0,tracking_only_not_billable,2026-07-27T17:21:32.856008+00:00

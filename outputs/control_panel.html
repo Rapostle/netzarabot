@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="refresh" content="60">
+  <title>Trading Bot Control Panel</title>
+  <style>
+    :root {
+      --bg: #f7f8fa;
+      --panel: #fff;
+      --ink: #17202a;
+      --muted: #667085;
+      --line: #d9dee7;
+      --danger: #991b1b;
+      --danger-bg: #fee2e2;
+      --active: #075985;
+      --active-bg: #e0f2fe;
+      --waiting: #7c5f00;
+      --waiting-bg: #fff6d8;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--bg); color: var(--ink); }
+    main { width: min(1180px, calc(100% - 28px)); margin: 0 auto; padding: 28px 0; }
+    h1 { margin: 0 0 8px; font-size: 32px; }
+    .subtle { color: var(--muted); margin: 0 0 20px; }
+    .banner { border: 1px solid var(--danger); background: var(--danger-bg); color: var(--danger); border-radius: 8px; padding: 14px; font-weight: 700; margin-bottom: 16px; }
+    .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; }
+    .top { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
+    h2 { margin: 0; font-size: 19px; }
+    span { border-radius: 999px; padding: 5px 9px; font-size: 12px; font-weight: 800; text-align: center; }
+    .danger span { background: var(--danger-bg); color: var(--danger); }
+    .active span { background: var(--active-bg); color: var(--active); }
+    .waiting span { background: var(--waiting-bg); color: var(--waiting); }
+    p { color: var(--muted); line-height: 1.45; }
+    .metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .metrics div { border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
+    strong { display: block; font-size: 22px; }
+    small { color: var(--muted); }
+    .links { margin-top: 16px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; }
+    code { display: block; background: #eef2f7; border-radius: 6px; padding: 6px; margin: 6px 0; overflow-wrap: anywhere; }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Trading Bot Control Panel</h1>
+    <p class="subtle">Updated 2026-07-27T20:20:07.203053+00:00. Paper monitoring only.</p>
+    <div class="banner">LIVE TRADING IS NOT READY. Do not add real money yet.</div>
+    <div class="grid">
+            <section class="card danger">
+              <div class="top">
+                <h2>Original stable rules</h2>
+                <span>REJECT / QUARANTINE</span>
+              </div>
+              <p>Closed paper PnL is beyond the loss limit.</p>
+              <div class="metrics">
+                <div><strong>0</strong><small>Open paper trades</small></div>
+                <div><strong>9</strong><small>Closed trades</small></div>
+                <div><strong>-134.75</strong><small>Closed PnL</small></div>
+                <div><strong>0</strong><small>Opened this run</small></div>
+              </div>
+            </section>
+            
+            <section class="card waiting">
+              <div class="top">
+                <h2>Experimental pair candidates</h2>
+                <span>ELIGIBLE FOR MANUAL REVIEW</span>
+              </div>
+              <p>Enough trades and positive paper PnL, but manual review is still required.</p>
+              <div class="metrics">
+                <div><strong>0</strong><small>Open paper trades</small></div>
+                <div><strong>23</strong><small>Closed trades</small></div>
+                <div><strong>161.69</strong><small>Closed PnL</small></div>
+                <div><strong>0</strong><small>Opened this run</small></div>
+              </div>
+            </section>
+            
+            <section class="card waiting">
+              <div class="top">
+                <h2>Advanced sniper candidates</h2>
+                <span>KEEP PAPER TESTING</span>
+              </div>
+              <p>Needs a larger paper sample before any live step.</p>
+              <div class="metrics">
+                <div><strong>0</strong><small>Open paper trades</small></div>
+                <div><strong>19</strong><small>Closed trades</small></div>
+                <div><strong>153.61</strong><small>Closed PnL</small></div>
+                <div><strong>0</strong><small>Opened this run</small></div>
+              </div>
+            </section>
+            </div>
+    <section class="links">
+      <h2>Useful Reports</h2>
+      <code>outputs/auto_promotion_gate.md</code>
+      <code>outputs/trade_explainer.md</code>
+      <code>outputs/loss_pattern_report.md</code>
+      <code>outputs/paper_exit_optimizer.md</code>
+      <code>outputs/shadow_retest_report.md</code>
+      <code>outputs/instrument_expansion_plan.md</code>
+      <code>outputs/boom_crash_expansion_report.md</code>
+      <code>outputs/boom_crash_expansion_monitor_template.md</code>
+      <code>outputs/self_healing_monitor_check.md</code>
+      <code>outputs/best_track_leaderboard.md</code>
+      <code>outputs/trade_replay_report.md</code>
+      <code>outputs/rule_kill_switch_report.md</code>
+      <code>outputs/candidate_promotion_queue.md</code>
+      <code>outputs/daily_summary_report.md</code>
+    </section>
+  </main>
+</body>
+</html>

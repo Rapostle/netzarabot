@@ -1,0 +1,2 @@
+rule_id,symbol,timeframe,side,feature,condition,trades,total_return,win_rate,profit_factor,expectancy,max_drawdown
+RELAXED_SR007_bb_position,BOOM300N,15m,buy,bb_position,below_lower_band_area,203,-0.00015999312784997777,0.43842364532019706,0.9634315541068633,-7.867794645715186e-07,0.0010079733088082321

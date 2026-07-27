@@ -1,0 +1,2 @@
+id,user_id,enabled_requested,live_execution_allowed,strategy_group,max_daily_loss_pct,max_open_trades,max_risk_per_trade_pct,emergency_stop_rule,updated_at_utc
+5,2,1,0,strict_approved_candidates_only,2.0,1,0.5,stop_after_one_live_loss_or_execution_error,2026-07-27T17:21:32.856008+00:00

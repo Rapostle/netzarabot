@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="refresh" content="60">
+  <title>Expansion Control Dashboard</title>
+  <style>
+    :root { --bg:#f7f8fb; --panel:#fff; --ink:#162033; --muted:#667085; --line:#d8dee8; --ok:#075985; --warn:#92400e; --bad:#991b1b; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; background:var(--bg); color:var(--ink); }
+    main { width:min(1200px,calc(100% - 28px)); margin:0 auto; padding:28px 0; }
+    h1 { margin:0 0 6px; font-size:30px; }
+    p { color:var(--muted); }
+    .banner { border:1px solid var(--bad); color:var(--bad); background:#fee2e2; border-radius:8px; padding:12px; font-weight:800; margin:16px 0; }
+    .grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+    .card { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:14px; }
+    .card h2 { margin:0 0 12px; font-size:17px; }
+    .active { border-color:var(--ok); }
+    .danger { border-color:var(--bad); }
+    .metrics { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+    .metrics div { border:1px solid var(--line); border-radius:8px; padding:8px; }
+    strong { display:block; font-size:21px; }
+    small { color:var(--muted); }
+    table { width:100%; border-collapse:collapse; background:var(--panel); border:1px solid var(--line); border-radius:8px; overflow:hidden; margin-top:16px; }
+    th,td { text-align:left; border-bottom:1px solid var(--line); padding:9px; font-size:14px; }
+    th { background:#edf1f7; }
+    @media(max-width:950px) { .grid { grid-template-columns:1fr; } table { display:block; overflow-x:auto; } }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Expansion Control Dashboard</h1>
+    <p>Updated 2026-07-27T20:20:09.036439+00:00. Paper monitoring only.</p>
+    <div class="banner">No live trading yet. Open paper trades must close and pass readiness first.</div>
+    <div class="grid">
+            <section class="card danger">
+              <h2>Original stable rules</h2>
+              <div class="metrics">
+                <div><strong>0</strong><small>Open</small></div>
+                <div><strong>9</strong><small>Closed</small></div>
+                <div><strong>-134.75</strong><small>Closed PnL</small></div>
+                <div><strong>11.1%</strong><small>Win rate</small></div>
+              </div>
+              <p>Last run: 2026-07-27T20:19:26.113872+00:00</p>
+            </section>
+            
+            <section class="card waiting">
+              <h2>Experimental pair candidates</h2>
+              <div class="metrics">
+                <div><strong>0</strong><small>Open</small></div>
+                <div><strong>23</strong><small>Closed</small></div>
+                <div><strong>161.69</strong><small>Closed PnL</small></div>
+                <div><strong>65.2%</strong><small>Win rate</small></div>
+              </div>
+              <p>Last run: 2026-07-27T20:19:44.271068+00:00</p>
+            </section>
+            
+            <section class="card waiting">
+              <h2>Advanced sniper candidates</h2>
+              <div class="metrics">
+                <div><strong>0</strong><small>Open</small></div>
+                <div><strong>19</strong><small>Closed</small></div>
+                <div><strong>153.61</strong><small>Closed PnL</small></div>
+                <div><strong>68.4%</strong><small>Win rate</small></div>
+              </div>
+              <p>Last run: 2026-07-27T20:19:46.453137+00:00</p>
+            </section>
+            
+            <section class="card waiting">
+              <h2>Boom/Crash expansion candidates</h2>
+              <div class="metrics">
+                <div><strong>0</strong><small>Open</small></div>
+                <div><strong>4</strong><small>Closed</small></div>
+                <div><strong>10.71</strong><small>Closed PnL</small></div>
+                <div><strong>75.0%</strong><small>Win rate</small></div>
+              </div>
+              <p>Last run: 2026-07-27T20:16:44.180838+00:00</p>
+            </section>
+            </div>
+    <h2>Open Paper Trades</h2>
+    <table>
+      <thead><tr><th>Track</th><th>Symbol</th><th>TF</th><th>Side</th><th>Rule</th><th>Progress R</th><th>Health</th></tr></thead>
+      <tbody><tr><td colspan="7">No open paper trades.</td></tr></tbody>
+    </table>
+  </main>
+</body>
+</html>

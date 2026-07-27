@@ -1,0 +1,6 @@
+id,user_id,connection_type,deriv_account_id,account_mode,api_scope_summary,partner_signup_embedded,status,created_at_utc
+1,2,manual_api_token,CR-DEMO-PENDING,demo,read/trade planned; admin avoided,1,demo_connected_live_locked,2026-07-27T15:35:00.967359+00:00
+2,2,manual_api_token,CR-DEMO-PENDING,demo,read/trade planned; admin avoided,1,demo_connected_live_locked,2026-07-27T16:12:55.332199+00:00
+3,2,manual_api_token,CR-DEMO-PENDING,demo,read/trade planned; admin avoided,1,demo_connected_live_locked,2026-07-27T16:32:36.119696+00:00
+4,2,manual_api_token,CR-DEMO-PENDING,demo,read/trade planned; admin avoided,1,demo_connected_live_locked,2026-07-27T16:57:31.700675+00:00
+5,2,manual_api_token,CR-DEMO-PENDING,demo,read/trade planned; admin avoided,1,demo_connected_live_locked,2026-07-27T17:21:32.856008+00:00

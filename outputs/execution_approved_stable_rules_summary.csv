@@ -1,0 +1,3 @@
+symbol,timeframe,strategy,trades,total_return,win_rate,max_drawdown,profit_factor,expectancy,verdict
+BOOM300N,15m,stable_promoted_rules,18,0.0092629927256944,0.6111111111111112,0.0070285289596215,1.5545396431331333,5.14610706983003,helping
+CRASH300N,15m,stable_promoted_rules,26,0.0114274318301446,0.5,0.0076861476124559,1.4641504676511048,4.395166088517306,helping

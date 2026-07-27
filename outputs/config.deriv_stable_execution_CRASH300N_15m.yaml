@@ -1,0 +1,68 @@
+symbol: CRASH300N
+timeframe: 15m
+higher_timeframe: null
+initial_equity: 10000
+data:
+  primary_csv: data/deriv_CRASH300N_15m.csv
+  higher_timeframe_csv: null
+execution:
+  mode: backtest
+  fee_rate: 0.0004
+  slippage_rate: 0.0002
+risk:
+  risk_per_trade: 0.003
+  max_daily_loss: 0.02
+  max_drawdown: 0.08
+  max_open_positions: 1
+  atr_stop_multiplier: 3.0
+  reward_risk_ratio: 1.2
+  min_confidence: 0.75
+  max_consecutive_losses: 3
+  force_reward_risk_ratio: false
+filters:
+  strong_trend_only: false
+  min_ema_spread_atr: 0.0
+  avoid_choppy_market: false
+  min_bollinger_width_atr: 0.0
+  min_atr_pct: 0.0
+  max_atr_pct: 0.0
+  avoid_low_volume: false
+  min_volume_ratio: 0.75
+  require_higher_timeframe_alignment: false
+  use_regime_filter: false
+  allowed_regimes: null
+  blocked_regimes:
+  - dead
+  - spiking
+  dead_atr_pct: 0.0008
+  spiking_atr_pct: 0.012
+  compressed_bb_width_atr: 1.0
+  trending_ema_spread_atr: 0.5
+  news_blackouts_utc: null
+exits:
+  trailing_stop: false
+  trailing_atr_multiplier: 1.6
+  trailing_start_r: 0.75
+  partial_take_profit: false
+  partial_at_r: 1.0
+  partial_fraction: 0.25
+  move_to_breakeven_after_partial: false
+  move_to_breakeven_at_r: 0.0
+  exit_on_momentum_weakness: false
+  max_bars_in_trade: 12
+strategies:
+  enabled:
+  - stable_promoted_rules
+  weights:
+    stable_promoted_rules: 1.0
+  parameters:
+    stable_promoted_rules:
+      rules_csv: /Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot/outputs/crash_boom_execution_approved_stable_rules_15m_30m.csv
+      confidence: 0.82
+      atr_stop_multiplier: 3.0
+      reward_risk_ratio: 1.2
+  multi_timeframe:
+    enabled: false
+    require_alignment: false
+  confluence:
+    min_agreeing_strategies: 1

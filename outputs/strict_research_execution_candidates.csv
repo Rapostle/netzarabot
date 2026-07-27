@@ -1,0 +1,2 @@
+rule_id,symbol,timeframe,suggested_side,feature,condition,trades,total_return,win_rate,profit_factor,expectancy,symbol_rule_rank,promotion_status,source_rule_id,source_file
+STRICT001,CRASH300N,15m,buy,trend_zone+atr_regime,flat_trend & atr_mid_low,80,0.535187,0.7375,5.1791,0.00669,2,strict_research_only,PAIR017,advanced_accuracy_execution_candidates.csv

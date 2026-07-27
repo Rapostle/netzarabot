@@ -1,0 +1,6 @@
+id,user_id,plan_name,monthly_price_usd,status,current_period_start_utc,current_period_end_utc
+1,2,Auto Trader,50.0,demo_active,2026-07-27T15:35:00.967359+00:00,pending_payment_processor
+2,2,Auto Trader,50.0,demo_active,2026-07-27T16:12:55.332199+00:00,pending_payment_processor
+3,2,Auto Trader,50.0,demo_active,2026-07-27T16:32:36.119696+00:00,pending_payment_processor
+4,2,Auto Trader,50.0,demo_active,2026-07-27T16:57:31.700675+00:00,pending_payment_processor
+5,2,Auto Trader,50.0,demo_active,2026-07-27T17:21:32.856008+00:00,pending_payment_processor

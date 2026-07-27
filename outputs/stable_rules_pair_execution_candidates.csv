@@ -1,0 +1,11 @@
+rule_id,symbol,timeframe,suggested_side,feature,condition,trades,total_return,win_rate,profit_factor,expectancy,symbol_rule_rank,promotion_status
+PAIR001,BOOM300N,15m,buy,bb_position+supertrend_side,below_lower_band_area & supertrend_up,89,1.0378130558371952,0.6966292134831461,3.884320664780049,0.0116608208521033,1,experimental_paper_candidate
+PAIR002,BOOM300N,15m,buy,rsi_zone+trend_zone,rsi_overbought & strong_downtrend,185,1.967448463161792,0.654054054054054,3.359371875714881,0.0106348565576313,2,experimental_paper_candidate
+PAIR006,BOOM300N,15m,buy,trend_zone+candle_body,strong_downtrend & large_bear_body,145,0.7585584862433599,0.5517241379310345,2.2029419727971464,0.0052314378361611,3,experimental_paper_candidate
+PAIR005,BOOM300N,15m,buy,trend_zone+bb_width_regime,downtrend & bb_expanded,83,0.4573694384312691,0.5301204819277109,2.2553917752834494,0.0055104751618225,4,experimental_paper_candidate
+PAIR016,BOOM300N,15m,sell,supertrend_side+lower_wick,supertrend_up & large_lower_wick,44,0.3765543284403445,0.7045454545454546,2.8695432311266016,0.0085580529190987,1,experimental_paper_candidate
+PAIR023,CRASH300N,15m,buy,rsi_zone+bb_position,rsi_low & upper_band_area,39,0.25718933378691,0.6153846153846154,2.772004503411293,0.0065945983022284,1,experimental_paper_candidate
+PAIR017,CRASH300N,15m,buy,trend_zone+atr_regime,flat_trend & atr_mid_low,79,0.550873828253448,0.7215189873417721,5.376420672462528,0.0069730864335879,2,experimental_paper_candidate
+PAIR024,CRASH300N,15m,buy,bb_position+atr_regime,middle_band_area & atr_low,57,0.4426848213987496,0.6666666666666666,2.7313504170524707,0.0077664003754166,3,experimental_paper_candidate
+PAIR019,CRASH300N,15m,buy,rsi_zone+atr_regime,rsi_low & atr_low,41,0.3840559557363296,0.6829268292682927,3.4265611293178297,0.0093672184325934,4,experimental_paper_candidate
+PAIR029,CRASH300N,15m,sell,bb_position+candle_body,lower_band_area & large_bull_body,34,0.2549174241691216,0.6176470588235294,2.7595597021615106,0.0074975712990918,1,experimental_paper_candidate

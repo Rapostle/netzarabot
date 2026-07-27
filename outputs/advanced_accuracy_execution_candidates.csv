@@ -1,0 +1,9 @@
+rule_id,symbol,timeframe,suggested_side,feature,condition,trades,total_return,win_rate,profit_factor,expectancy,symbol_rule_rank,promotion_status
+PAIR001,BOOM300N,15m,buy,bb_position+supertrend_side,below_lower_band_area & supertrend_up,92,0.969697,0.6957,3.4231,0.01054,1,advanced_sniper_research_candidate
+PAIR006,BOOM300N,15m,buy,trend_zone+candle_body,strong_downtrend & large_bear_body,16,0.111153,0.6875,3.1222,0.006947,2,advanced_sniper_research_candidate
+PAIR002,BOOM300N,15m,buy,rsi_zone+trend_zone,rsi_overbought & strong_downtrend,128,1.08944,0.5859,2.5851,0.008511,3,advanced_sniper_research_candidate
+PAIR023,CRASH300N,15m,buy,rsi_zone+bb_position,rsi_low & upper_band_area,29,0.283689,0.7241,5.6028,0.009782,1,advanced_sniper_research_candidate
+PAIR017,CRASH300N,15m,buy,trend_zone+atr_regime,flat_trend & atr_mid_low,80,0.535187,0.7375,5.1791,0.00669,2,advanced_sniper_research_candidate
+PAIR019,CRASH300N,15m,buy,rsi_zone+atr_regime,rsi_low & atr_low,34,0.383997,0.7941,5.0005,0.011294,3,advanced_sniper_research_candidate
+PAIR024,CRASH300N,15m,buy,bb_position+atr_regime,middle_band_area & atr_low,55,0.510483,0.6909,3.1525,0.009282,4,advanced_sniper_research_candidate
+PAIR029,CRASH300N,15m,sell,bb_position+candle_body,lower_band_area & large_bull_body,30,0.260335,0.6333,3.7675,0.008678,1,advanced_sniper_research_candidate

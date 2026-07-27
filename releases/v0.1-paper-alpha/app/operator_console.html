@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="refresh" content="60">
+  <title>Trading Bot Operator Console</title>
+  <style>
+    :root { --bg:#f6f8fb; --panel:#fff; --ink:#142033; --muted:#667085; --line:#d7deea; --bad:#991b1b; --ok:#075985; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; background:var(--bg); color:var(--ink); }
+    main { width:min(1180px,calc(100% - 28px)); margin:0 auto; padding:28px 0; }
+    h1 { margin:0 0 6px; font-size:32px; }
+    p { color:var(--muted); }
+    .banner { background:#fee2e2; color:var(--bad); border:1px solid var(--bad); border-radius:8px; padding:13px; font-weight:800; margin:16px 0; }
+    .grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+    .card,.panel,button { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:14px; }
+    .danger { border-color:var(--bad); }
+    .active { border-color:var(--ok); }
+    h2 { margin:0 0 12px; font-size:18px; }
+    .metrics { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+    .metrics div { border:1px solid var(--line); border-radius:8px; padding:8px; }
+    strong { display:block; font-size:21px; }
+    small { color:var(--muted); }
+    .controls { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; }
+    button { text-align:left; cursor:default; }
+    button span { font-weight:800; display:block; margin-bottom:8px; }
+    code { background:#eef2f7; display:block; padding:7px; border-radius:6px; white-space:pre-wrap; }
+    .panel { margin-top:16px; }
+    a { color:var(--ok); }
+    @media(max-width:1000px) { .grid,.controls { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Trading Bot Operator Console</h1>
+    <p>Updated 2026-07-27T20:20:10.834844+00:00. Local paper mode.</p>
+    <div class="banner">No live trading. These buttons show commands to paste in Terminal.</div>
+    <div class="grid">
+            <section class="card danger">
+              <h2>Original stable rules</h2>
+              <div class="metrics">
+                <div><strong>0</strong><small>Open</small></div>
+                <div><strong>9</strong><small>Closed</small></div>
+                <div><strong>-134.75</strong><small>Paper PnL</small></div>
+                <div><strong>11.1%</strong><small>Win rate</small></div>
+              </div>
+            </section>
+            
+            <section class="card waiting">
+              <h2>Experimental pair candidates</h2>
+              <div class="metrics">
+                <div><strong>0</strong><small>Open</small></div>
+                <div><strong>23</strong><small>Closed</small></div>
+                <div><strong>161.69</strong><small>Paper PnL</small></div>
+                <div><strong>65.2%</strong><small>Win rate</small></div>
+              </div>
+            </section>
+            
+            <section class="card waiting">
+              <h2>Advanced sniper candidates</h2>
+              <div class="metrics">
+                <div><strong>0</strong><small>Open</small></div>
+                <div><strong>19</strong><small>Closed</small></div>
+                <div><strong>153.61</strong><small>Paper PnL</small></div>
+                <div><strong>68.4%</strong><small>Win rate</small></div>
+              </div>
+            </section>
+            
+            <section class="card waiting">
+              <h2>Boom/Crash expansion candidates</h2>
+              <div class="metrics">
+                <div><strong>0</strong><small>Open</small></div>
+                <div><strong>4</strong><small>Closed</small></div>
+                <div><strong>10.71</strong><small>Paper PnL</small></div>
+                <div><strong>75.0%</strong><small>Win rate</small></div>
+              </div>
+            </section>
+            </div>
+    <section class="panel">
+      <h2>Controls</h2>
+      <div class="controls"><button title='work/start_trading_bot_suite.sh'><span>Start</span><code>work/start_trading_bot_suite.sh</code></button><button title='work/stop_trading_bot_suite.sh'><span>Stop</span><code>work/stop_trading_bot_suite.sh</code></button><button title='work/check_bot_status.sh'><span>Status</span><code>work/check_bot_status.sh</code></button><button title='work/status_trading_bot_suite.sh'><span>Service Status</span><code>work/status_trading_bot_suite.sh</code></button><button title='work/monitor_command_center.sh'><span>Command Center</span><code>work/monitor_command_center.sh</code></button></div>
+    </section>
+    <section class="panel">
+      <h2>Views</h2>
+      <p><a href="trade_timeline.html">Trade Timeline</a> | <a href="rule_pages/index.html">Rule Detail Pages</a> | <a href="client_demo_mode.html">Client Demo Mode</a></p>
+    </section>
+  </main>
+</body>
+</html>

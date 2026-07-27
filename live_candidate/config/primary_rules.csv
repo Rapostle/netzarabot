@@ -1,0 +1,2 @@
+rule_id,symbol,timeframe,suggested_side,feature,condition,trades,total_return,win_rate,profit_factor,expectancy,symbol_rule_rank,promotion_status
+PAIR017,CRASH300N,15m,buy,trend_zone+atr_regime,flat_trend & atr_mid_low,80,0.535187,0.7375,5.1791,0.00669,1,live_candidate_demo_only

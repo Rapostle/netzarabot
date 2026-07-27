@@ -1,0 +1,10 @@
+metric,value
+last_run_utc,2026-07-27T20:19:26.113872+00:00
+latest_decisions,"BOOM300N:no_trade, CRASH300N:no_trade"
+latest_paper_signals,0
+latest_paper_orders,0
+latest_blocked_signals,0
+journal_rows,2130
+open_positions,0
+closed_trades,9
+closed_pnl,-134.75120968391016

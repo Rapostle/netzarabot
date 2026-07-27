@@ -1,0 +1,2 @@
+strategy,trades,final_equity,total_return,win_rate,max_drawdown,net_pnl,profit_factor,expectancy,avg_win,avg_loss,verdict
+stable_promoted_rules,26,10114.274318301446,0.011427431830144634,0.5,0.007686147612455956,114.27431830144633,1.4641504676511048,4.395166088517306,27.728872132664225,-18.938539955629608,helping

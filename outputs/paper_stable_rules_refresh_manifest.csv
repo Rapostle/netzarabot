@@ -1,0 +1,3 @@
+symbol,timeframe,output,status,candles,error
+BOOM300N,15m,/Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot/outputs/paper_refreshed_data/deriv_BOOM300N_15m.csv,refreshed,5000,
+CRASH300N,15m,/Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot/outputs/paper_refreshed_data/deriv_CRASH300N_15m.csv,refreshed,5000,

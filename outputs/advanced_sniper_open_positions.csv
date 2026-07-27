@@ -1,0 +1,1 @@
+paper_order_id,symbol,timeframe,opened_at,recorded_at_utc,side,entry,stop_loss,take_profit,quantity,risk_amount,reason,status

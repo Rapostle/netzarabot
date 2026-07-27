@@ -1,0 +1,8 @@
+rule_id,symbol,timeframe,suggested_side,feature,condition,trades,total_return,win_rate,profit_factor,expectancy,max_drawdown,symbol_rule_rank,promotion_status
+SR007,BOOM300N,15m,buy,bb_position+bb_width_regime,below_lower_band_area & bb_normal_high,10,0.0003873648913073,0.6,8.106443411837674,3.873141697150048e-05,4.099206126787875e-05,1,survivor
+SR001,BOOM300N,15m,buy,bb_position+atr_regime,below_lower_band_area & atr_mid_low,16,0.00023155592429,0.5,1.570100365209559,1.4473901151273518e-05,0.0002148367490432,2,survivor
+SR003,BOOM300N,15m,buy,bb_width_regime+macd_hist_slope,bb_expanded & macd_rising,15,0.0002121061103421,0.4666666666666667,1.7401023998970475,1.4141044387277144e-05,0.0001541226131981,3,survivor
+SR006,BOOM300N,15m,buy,rsi_zone+bb_position,rsi_oversold & below_lower_band_area,12,0.000196504973396,0.5833333333333334,1.9364579130177968,1.6375667305501578e-05,7.047898829334137e-05,4,survivor
+SR017,CRASH300N,15m,buy,rsi_zone+trend_zone,rsi_low & strong_uptrend,13,0.0004093157726849,0.7692307692307693,3.9343247469684246,3.148134431753764e-05,0.0001013621467626,1,survivor
+SR011,CRASH300N,15m,buy,rsi_zone+atr_regime,rsi_high & atr_low,11,0.0002885122290734,0.8181818181818182,8.623220764260259,2.622536795036557e-05,2.976836966908608e-05,2,survivor
+SR010,CRASH300N,15m,sell,bb_position+lower_wick,above_upper_band_area & small_lower_wick,33,0.000576079465006,0.6060606060606061,1.9136499396451383,1.7454422008575843e-05,0.0002300603439428,1,survivor

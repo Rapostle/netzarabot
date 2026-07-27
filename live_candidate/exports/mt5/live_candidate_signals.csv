@@ -1,0 +1,2 @@
+timestamp,symbol,timeframe,side,rule_id,entry,stop_loss,take_profit,confidence,mode,status,reason
+2026-07-27 14:15:00+00:00,CRASH300N,15m,hold,candidate_rule,2081.498,,,0.0,primary_demo,no_trade,no trade signal

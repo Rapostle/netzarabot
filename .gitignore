@@ -1,0 +1,49 @@
+# Python/runtime
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Node/site build dependencies
+node_modules/
+dist/
+.next/
+.wrangler/
+
+# Local secrets and credentials
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.token
+
+# Runtime logs and process files
+*.log
+*.pid
+outputs/service_logs/
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Large downloaded/generated market data
+data/
+outputs/*_refreshed_data/
+outputs/paper_refreshed_data/
+outputs/boom_crash_expansion_refreshed_data/
+outputs/pair_candidate_refreshed_data/
+outputs/strict_research_refreshed_data/
+live_candidate/outputs/refreshed_data/
+
+# Generated build/package artifacts
+site_live/dist/
+site_live/node_modules/
+site_live/.wrangler/
+releases/*.zip
+
+# macOS/editor noise
+.DS_Store
+.idea/
+.vscode/

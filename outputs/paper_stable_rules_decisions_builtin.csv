@@ -1,0 +1,3 @@
+symbol,timeframe,timestamp,decision,side,confidence,reason,entry,stop_loss,take_profit,quantity,risk_amount,paper_order_id,refresh_status,refresh_error,refreshed_candles
+BOOM300N,15m,2026-07-09 10:45:00+00:00,no_trade,hold,0.0,no trade signal,1071.473,,,,,,not_requested,,
+CRASH300N,15m,2026-07-09 10:45:00+00:00,no_trade,hold,0.0,no trade signal,1566.719,,,,,,not_requested,,

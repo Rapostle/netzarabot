@@ -1,0 +1,3 @@
+paper_order_id,symbol,timeframe,opened_at,recorded_at_utc,side,entry,stop_loss,take_profit,quantity,risk_amount,reason,status
+paper-2,BOOM1000,5m,2026-07-12 00:35:00+00:00,2026-07-12T00:49:35.849950+00:00,buy,14593.053,14567.898428571429,14623.238485714286,1.1926261628105002,30.0,stable_promoted_rules: stable promoted rule BCX0021: atr_regime+bb_width_regime is atr_mid_high & bb_normal_low,open
+paper-4,BOOM900,5m,2026-07-12 00:40:00+00:00,2026-07-12T00:49:35.849950+00:00,sell,8564.3,8578.276785714284,8547.527857142857,2.14641625143732,30.0,stable_promoted_rules: stable promoted rule BCX0166: macd_hist_sign+supertrend_side is macd_positive & supertrend_down,open

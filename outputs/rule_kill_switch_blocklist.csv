@@ -1,0 +1,15 @@
+track,rule,action,trades,wins,losses,win_rate,stop_losses,pnl,avg,why
+Original stable rules,SR010,KILL NOW,6,0,6,0.0%,4,-130.87,-21.81,Strict accuracy gate: enough paper evidence and rule is hurting quality.
+Experimental pair candidates,PAIR019,KILL NOW,3,2,1,66.7%,1,-13.12,-4.37,Strict accuracy gate: enough paper evidence and rule is hurting quality.
+Advanced sniper candidates,PAIR019,KILL NOW,3,2,1,66.7%,1,-12.18,-4.06,Strict accuracy gate: enough paper evidence and rule is hurting quality.
+Experimental pair candidates,PAIR001,FREEZE,2,0,2,0.0%,0,-12.95,-6.48,Strict accuracy gate: rule is below 70% paper win rate or not net-positive.
+Original stable rules,SR017,FREEZE,2,1,1,50.0%,1,-0.73,-0.37,Strict accuracy gate: rule is below 70% paper win rate or not net-positive.
+Experimental pair candidates,PAIR024,FREEZE,2,1,1,50.0%,1,5.36,2.68,Strict accuracy gate: rule is below 70% paper win rate or not net-positive.
+Advanced sniper candidates,PAIR001,FREEZE,2,1,1,50.0%,1,5.4,2.7,Strict accuracy gate: rule is below 70% paper win rate or not net-positive.
+Experimental pair candidates,PAIR005,FREEZE,3,2,1,66.7%,1,5.51,1.84,Strict accuracy gate: rule is below 70% paper win rate or not net-positive.
+Advanced sniper candidates,PAIR023,FREEZE,2,1,1,50.0%,1,5.71,2.86,Strict accuracy gate: rule is below 70% paper win rate or not net-positive.
+Advanced sniper candidates,PAIR002,FREEZE,3,2,1,66.7%,1,12.5,4.17,Strict accuracy gate: rule is below 70% paper win rate or not net-positive.
+Experimental pair candidates,PAIR002,FREEZE,3,2,1,66.7%,1,12.51,4.17,Strict accuracy gate: rule is below 70% paper win rate or not net-positive.
+Advanced sniper candidates,PAIR006,FREEZE,2,1,1,50.0%,0,21.11,10.56,Strict accuracy gate: rule is below 70% paper win rate or not net-positive.
+Advanced sniper candidates,PAIR024,FREEZE,3,2,1,66.7%,1,23.67,7.89,Strict accuracy gate: rule is below 70% paper win rate or not net-positive.
+Experimental pair candidates,PAIR023,FREEZE,3,2,1,66.7%,1,41.71,13.9,Strict accuracy gate: rule is below 70% paper win rate or not net-positive.
