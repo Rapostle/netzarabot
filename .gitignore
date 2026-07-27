@@ -38,6 +38,7 @@ outputs/strict_research_refreshed_data/
 live_candidate/outputs/refreshed_data/
 
 # Generated build/package artifacts
+site_live/
 site_live/dist/
 site_live/node_modules/
 site_live/.wrangler/
