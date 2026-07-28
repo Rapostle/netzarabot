@@ -16,6 +16,7 @@ input int MagicNumber = 7302026;
 input int MaxSpreadPoints = 250;
 input bool OnePositionPerSymbol = true;
 input bool UseSignalStops = true;
+input bool EmergencyStopClosesPositions = true;
 
 CTrade trade;
 datetime lastPoll = 0;
@@ -23,6 +24,16 @@ string lastSignalId = "";
 bool remoteTradingEnabled = false;
 bool remoteEmergencyStop = false;
 double remoteMaxLot = 0.01;
+string remoteStopMode = "signal";
+double remoteOverrideSLPoints = 0.0;
+double remoteOverrideTPPoints = 0.0;
+bool remoteBreakevenEnabled = false;
+double remoteBreakevenTriggerPoints = 0.0;
+double remoteBreakevenOffsetPoints = 0.0;
+bool remoteTrailingEnabled = false;
+double remoteTrailingStartPoints = 0.0;
+double remoteTrailingDistancePoints = 0.0;
+double remoteCloseAfterMinutes = 0.0;
 
 string Trim(string value)
 {
@@ -64,6 +75,103 @@ bool SpreadOk(string symbol)
    if(!SymbolInfoInteger(symbol, SYMBOL_SPREAD, spread))
       return false;
    return spread <= MaxSpreadPoints;
+}
+
+double PointValue(string symbol)
+{
+   double point = SymbolInfoDouble(symbol, SYMBOL_POINT);
+   if(point <= 0.0)
+      point = _Point;
+   return point;
+}
+
+bool ImprovesStop(long type, double currentSL, double nextSL)
+{
+   if(nextSL <= 0.0)
+      return false;
+   if(currentSL <= 0.0)
+      return true;
+   if(type == POSITION_TYPE_BUY)
+      return nextSL > currentSL;
+   return nextSL < currentSL;
+}
+
+void CloseBridgePositions(string reason)
+{
+   trade.SetExpertMagicNumber(MagicNumber);
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
+   {
+      ulong ticket = PositionGetTicket(i);
+      if(ticket == 0 || !PositionSelectByTicket(ticket))
+         continue;
+      if(PositionGetInteger(POSITION_MAGIC) != MagicNumber)
+         continue;
+      string symbol = PositionGetString(POSITION_SYMBOL);
+      if(trade.PositionClose(symbol))
+         Print("Closed NetzaraBot position on ", symbol, ": ", reason);
+      else
+         Print("Failed closing NetzaraBot position on ", symbol, ". Retcode: ", trade.ResultRetcode(), " ", trade.ResultRetcodeDescription());
+   }
+}
+
+void ManageOpenPositions()
+{
+   trade.SetExpertMagicNumber(MagicNumber);
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
+   {
+      ulong ticket = PositionGetTicket(i);
+      if(ticket == 0 || !PositionSelectByTicket(ticket))
+         continue;
+      if(PositionGetInteger(POSITION_MAGIC) != MagicNumber)
+         continue;
+
+      string symbol = PositionGetString(POSITION_SYMBOL);
+      long type = PositionGetInteger(POSITION_TYPE);
+      datetime openedAt = (datetime)PositionGetInteger(POSITION_TIME);
+      double openPrice = PositionGetDouble(POSITION_PRICE_OPEN);
+      double currentSL = PositionGetDouble(POSITION_SL);
+      double currentTP = PositionGetDouble(POSITION_TP);
+      double point = PointValue(symbol);
+      double bid = SymbolInfoDouble(symbol, SYMBOL_BID);
+      double ask = SymbolInfoDouble(symbol, SYMBOL_ASK);
+      double profitPoints = type == POSITION_TYPE_BUY ? (bid - openPrice) / point : (openPrice - ask) / point;
+
+      if(remoteCloseAfterMinutes > 0.0 && (TimeCurrent() - openedAt) >= remoteCloseAfterMinutes * 60.0)
+      {
+         if(trade.PositionClose(symbol))
+            Print("Closed NetzaraBot position after time limit: ", symbol);
+         else
+            Print("Time-limit close failed on ", symbol, ". Retcode: ", trade.ResultRetcode(), " ", trade.ResultRetcodeDescription());
+         continue;
+      }
+
+      double nextSL = currentSL;
+      if(remoteBreakevenEnabled && remoteBreakevenTriggerPoints > 0.0 && profitPoints >= remoteBreakevenTriggerPoints)
+      {
+         double breakevenSL = type == POSITION_TYPE_BUY
+            ? openPrice + remoteBreakevenOffsetPoints * point
+            : openPrice - remoteBreakevenOffsetPoints * point;
+         if(ImprovesStop(type, nextSL, breakevenSL))
+            nextSL = breakevenSL;
+      }
+
+      if(remoteTrailingEnabled && remoteTrailingStartPoints > 0.0 && remoteTrailingDistancePoints > 0.0 && profitPoints >= remoteTrailingStartPoints)
+      {
+         double trailingSL = type == POSITION_TYPE_BUY
+            ? bid - remoteTrailingDistancePoints * point
+            : ask + remoteTrailingDistancePoints * point;
+         if(ImprovesStop(type, nextSL, trailingSL))
+            nextSL = trailingSL;
+      }
+
+      if(nextSL != currentSL && nextSL > 0.0)
+      {
+         if(trade.PositionModify(symbol, nextSL, currentTP))
+            Print("Updated NetzaraBot stop on ", symbol, " to ", DoubleToString(nextSL, _Digits));
+         else
+            Print("Stop update failed on ", symbol, ". Retcode: ", trade.ResultRetcode(), " ", trade.ResultRetcodeDescription());
+      }
+   }
 }
 
 string BuildUrl()
@@ -126,7 +234,50 @@ bool FetchControl()
    remoteTradingEnabled = parts[1] == "true";
    remoteEmergencyStop = parts[2] == "true";
    remoteMaxLot = StringToDouble(parts[4]);
+   if(ArraySize(parts) >= 17)
+   {
+      remoteStopMode = parts[7];
+      remoteOverrideSLPoints = StringToDouble(parts[8]);
+      remoteOverrideTPPoints = StringToDouble(parts[9]);
+      remoteBreakevenEnabled = parts[10] == "true";
+      remoteBreakevenTriggerPoints = StringToDouble(parts[11]);
+      remoteBreakevenOffsetPoints = StringToDouble(parts[12]);
+      remoteTrailingEnabled = parts[13] == "true";
+      remoteTrailingStartPoints = StringToDouble(parts[14]);
+      remoteTrailingDistancePoints = StringToDouble(parts[15]);
+      remoteCloseAfterMinutes = StringToDouble(parts[16]);
+   }
    return true;
+}
+
+void ApplyRemoteStops(string symbol, string side, double entryPrice, double &stopLoss, double &takeProfit)
+{
+   if(!UseSignalStops)
+   {
+      stopLoss = 0.0;
+      takeProfit = 0.0;
+      return;
+   }
+   if(remoteStopMode == "none")
+   {
+      stopLoss = 0.0;
+      takeProfit = 0.0;
+      return;
+   }
+   if(remoteStopMode != "override_points")
+      return;
+
+   double point = PointValue(symbol);
+   if(side == "buy")
+   {
+      stopLoss = remoteOverrideSLPoints > 0.0 ? entryPrice - remoteOverrideSLPoints * point : 0.0;
+      takeProfit = remoteOverrideTPPoints > 0.0 ? entryPrice + remoteOverrideTPPoints * point : 0.0;
+   }
+   else if(side == "sell")
+   {
+      stopLoss = remoteOverrideSLPoints > 0.0 ? entryPrice + remoteOverrideSLPoints * point : 0.0;
+      takeProfit = remoteOverrideTPPoints > 0.0 ? entryPrice - remoteOverrideTPPoints * point : 0.0;
+   }
 }
 
 void ExecuteSignal(string &parts[])
@@ -189,12 +340,14 @@ void ExecuteSignal(string &parts[])
    if(side == "buy")
    {
       double ask = SymbolInfoDouble(symbol, SYMBOL_ASK);
-      ok = trade.Buy(allowedLot, symbol, ask, UseSignalStops ? stopLoss : 0.0, UseSignalStops ? takeProfit : 0.0, "NetzaraBot " + signalId);
+      ApplyRemoteStops(symbol, side, ask, stopLoss, takeProfit);
+      ok = trade.Buy(allowedLot, symbol, ask, stopLoss, takeProfit, "NetzaraBot " + signalId);
    }
    else if(side == "sell")
    {
       double bid = SymbolInfoDouble(symbol, SYMBOL_BID);
-      ok = trade.Sell(allowedLot, symbol, bid, UseSignalStops ? stopLoss : 0.0, UseSignalStops ? takeProfit : 0.0, "NetzaraBot " + signalId);
+      ApplyRemoteStops(symbol, side, bid, stopLoss, takeProfit);
+      ok = trade.Sell(allowedLot, symbol, bid, stopLoss, takeProfit, "NetzaraBot " + signalId);
    }
 
    if(ok)
@@ -223,7 +376,16 @@ void OnTick()
    lastPoll = TimeCurrent();
 
    FetchControl();
-   if(!remoteTradingEnabled || remoteEmergencyStop)
+   if(remoteEmergencyStop)
+   {
+      if(EmergencyStopClosesPositions)
+         CloseBridgePositions("emergency stop");
+      return;
+   }
+
+   ManageOpenPositions();
+
+   if(!remoteTradingEnabled)
       return;
 
    string body = "";

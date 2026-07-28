@@ -43,6 +43,15 @@ Mobile control page:
 http://127.0.0.1:8765/control
 ```
 
+The mobile page can start/stop trading and control TP/SL behavior:
+
+- Use the bot signal's TP/SL.
+- Override TP/SL with fixed MT5 points.
+- Move SL to break-even after a chosen profit distance.
+- Trail winning positions.
+- Close bridge-managed trades after a time limit.
+- Limit max lot and allowed MT5 symbols.
+
 If you expose the bridge beyond the VPS, set a control token first:
 
 ```bash
@@ -66,6 +75,10 @@ http://127.0.0.1:8765
 7. Attach `NetzaraBotBridgeEA` to the Deriv MT5 symbol chart.
 8. Set `EnableLiveTrading=true` only when you want MT5 to place real CFD orders.
 9. Use the mobile control page to start/stop trading remotely.
+
+For the first real-money test, keep `FixedLot=0.01`, keep stop mode on
+`Use bot signal TP/SL`, and leave break-even/trailing off until you confirm the
+Deriv MT5 point size for that symbol.
 
 ## Important MT5 Symbol Mapping
 

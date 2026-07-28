@@ -47,6 +47,11 @@ Use this page to:
 - Stop Trading
 - Emergency Stop
 - Reset Emergency Stop
+- Choose whether MT5 should use the bot's TP/SL, override TP/SL by points, or place orders without bridge TP/SL
+- Set break-even rules
+- Set trailing stop rules
+- Close trades automatically after a time limit
+- Limit max lot and allowed MT5 symbols
 
 5. In MT5, add this allowed WebRequest URL:
 
@@ -66,6 +71,27 @@ The EA will not trade unless both are true:
 - Phone/VPS control `trading_enabled=true`
 
 Emergency Stop overrides everything.
+
+## TP / SL Controls
+
+The phone control page has a `TP / SL Settings` section.
+
+- `Use bot signal TP/SL`: the EA uses the stop-loss and take-profit that came from the bot signal.
+- `Override with fixed points`: the EA ignores the signal TP/SL and calculates fresh SL/TP from the MT5 entry price.
+- `No TP/SL from bridge`: the EA sends the trade without bridge-managed TP/SL. Use this only if another MT5 tool manages exits.
+- `Move SL to break-even`: once price moves enough points in profit, the EA moves SL to entry plus the extra points you choose.
+- `Use trailing stop`: once price moves enough points in profit, the EA trails the SL by your chosen distance.
+- `Close trade after minutes`: closes bridge-managed positions that have stayed open too long.
+
+These controls are read by the EA through `/control.txt`. They can be changed from your phone without restarting MT5.
+
+Recommended first live-money test settings:
+
+- Max lot: `0.01`
+- Stop mode: `Use bot signal TP/SL`
+- Break-even: off until the broker symbol point size is confirmed
+- Trailing stop: off until the broker symbol point size is confirmed
+- Close after minutes: `0`, unless you specifically want time-based exits
 
 ## VPS Notes
 

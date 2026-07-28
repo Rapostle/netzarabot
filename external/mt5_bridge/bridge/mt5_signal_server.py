@@ -39,6 +39,16 @@ class ControlState:
     mode: str = "live"
     max_lot: float = 0.01
     allowed_symbols: list[str] | None = None
+    stop_mode: str = "signal"
+    override_sl_points: float = 0.0
+    override_tp_points: float = 0.0
+    breakeven_enabled: bool = False
+    breakeven_trigger_points: float = 0.0
+    breakeven_offset_points: float = 0.0
+    trailing_enabled: bool = False
+    trailing_start_points: float = 0.0
+    trailing_distance_points: float = 0.0
+    close_after_minutes: float = 0.0
     updated_at: str = ""
     updated_by: str = "system"
 
@@ -68,6 +78,23 @@ def safe_float(value: object, default: float = 0.0) -> float:
         return default
 
 
+def safe_bool(value: object, default: bool = False) -> bool:
+    if isinstance(value, bool):
+        return value
+    if value in ("", None):
+        return default
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "on"}
+    return bool(value)
+
+
+def normalized_stop_mode(value: object) -> str:
+    mode = str(value or "signal").strip().lower()
+    if mode not in {"signal", "override_points", "none"}:
+        return "signal"
+    return mode
+
+
 def load_symbol_map(path: Path) -> dict[str, str]:
     if not path.exists():
         return {}
@@ -89,6 +116,16 @@ def default_control() -> ControlState:
         mode="live",
         max_lot=0.01,
         allowed_symbols=[],
+        stop_mode="signal",
+        override_sl_points=0.0,
+        override_tp_points=0.0,
+        breakeven_enabled=False,
+        breakeven_trigger_points=0.0,
+        breakeven_offset_points=0.0,
+        trailing_enabled=False,
+        trailing_start_points=0.0,
+        trailing_distance_points=0.0,
+        close_after_minutes=0.0,
         updated_at=datetime.now(timezone.utc).isoformat(),
         updated_by="default",
     )
@@ -107,11 +144,21 @@ def load_control(path: Path) -> ControlState:
         control.updated_by = "invalid_control_file"
         return control
     return ControlState(
-        trading_enabled=bool(raw.get("trading_enabled", False)),
-        emergency_stop=bool(raw.get("emergency_stop", False)),
+        trading_enabled=safe_bool(raw.get("trading_enabled"), False),
+        emergency_stop=safe_bool(raw.get("emergency_stop"), False),
         mode=str(raw.get("mode") or "live"),
         max_lot=max(safe_float(raw.get("max_lot"), 0.01), 0.0),
         allowed_symbols=list(raw.get("allowed_symbols") or []),
+        stop_mode=normalized_stop_mode(raw.get("stop_mode")),
+        override_sl_points=max(safe_float(raw.get("override_sl_points"), 0.0), 0.0),
+        override_tp_points=max(safe_float(raw.get("override_tp_points"), 0.0), 0.0),
+        breakeven_enabled=safe_bool(raw.get("breakeven_enabled"), False),
+        breakeven_trigger_points=max(safe_float(raw.get("breakeven_trigger_points"), 0.0), 0.0),
+        breakeven_offset_points=max(safe_float(raw.get("breakeven_offset_points"), 0.0), 0.0),
+        trailing_enabled=safe_bool(raw.get("trailing_enabled"), False),
+        trailing_start_points=max(safe_float(raw.get("trailing_start_points"), 0.0), 0.0),
+        trailing_distance_points=max(safe_float(raw.get("trailing_distance_points"), 0.0), 0.0),
+        close_after_minutes=max(safe_float(raw.get("close_after_minutes"), 0.0), 0.0),
         updated_at=str(raw.get("updated_at") or ""),
         updated_by=str(raw.get("updated_by") or ""),
     )
@@ -215,7 +262,11 @@ def control_text(control: ControlState) -> str:
     return (
         "CONTROL|"
         f"{str(control.trading_enabled).lower()}|{str(control.emergency_stop).lower()}|"
-        f"{control.mode}|{control.max_lot}|{allowed}|{control.updated_at}"
+        f"{control.mode}|{control.max_lot}|{allowed}|{control.updated_at}|"
+        f"{control.stop_mode}|{control.override_sl_points}|{control.override_tp_points}|"
+        f"{str(control.breakeven_enabled).lower()}|{control.breakeven_trigger_points}|"
+        f"{control.breakeven_offset_points}|{str(control.trailing_enabled).lower()}|"
+        f"{control.trailing_start_points}|{control.trailing_distance_points}|{control.close_after_minutes}"
         "\n"
     )
 
@@ -241,6 +292,10 @@ def control_page(control: ControlState) -> str:
     .danger {{ background: #ef4444; color: white; }}
     .reset {{ background: #38bdf8; color: #03111a; }}
     input {{ width: 100%; box-sizing: border-box; padding: 13px; border-radius: 10px; border: 1px solid #334155; background: #020617; color: white; margin: 6px 0 12px; }}
+    select {{ width: 100%; box-sizing: border-box; padding: 13px; border-radius: 10px; border: 1px solid #334155; background: #020617; color: white; margin: 6px 0 12px; }}
+    .grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }}
+    .toggle {{ display: flex; align-items: center; gap: 10px; margin: 8px 0 14px; }}
+    .toggle input {{ width: auto; margin: 0; }}
     small {{ color: #aab7cc; }}
   </style>
 </head>
@@ -251,6 +306,7 @@ def control_page(control: ControlState) -> str:
       <small>Status</small>
       <div class="status">{status}</div>
       <p>Mode: {control.mode} · Max lot: {control.max_lot}</p>
+      <p>Stops: {control.stop_mode} · SL {control.override_sl_points} pts · TP {control.override_tp_points} pts</p>
       <p>Allowed symbols: {", ".join(control.normalized_symbols()) or "all mapped symbols"}</p>
       <small>Updated: {control.updated_at or "not yet"}</small>
     </div>
@@ -263,11 +319,84 @@ def control_page(control: ControlState) -> str:
       <button class="reset" onclick="send('/control/reset-emergency')">Reset Emergency Stop</button>
       <p id="result"></p>
     </div>
+    <div class="card">
+      <h2>TP / SL Settings</h2>
+      <label>Stop mode</label>
+      <select id="stop_mode">
+        <option value="signal" {"selected" if control.stop_mode == "signal" else ""}>Use bot signal TP/SL</option>
+        <option value="override_points" {"selected" if control.stop_mode == "override_points" else ""}>Override with fixed points</option>
+        <option value="none" {"selected" if control.stop_mode == "none" else ""}>No TP/SL from bridge</option>
+      </select>
+      <div class="grid">
+        <div>
+          <label>Override SL points</label>
+          <input id="override_sl_points" type="number" step="0.1" value="{control.override_sl_points}" />
+        </div>
+        <div>
+          <label>Override TP points</label>
+          <input id="override_tp_points" type="number" step="0.1" value="{control.override_tp_points}" />
+        </div>
+      </div>
+      <label class="toggle"><input id="breakeven_enabled" type="checkbox" {"checked" if control.breakeven_enabled else ""} /> Move SL to break-even</label>
+      <div class="grid">
+        <div>
+          <label>Break-even trigger points</label>
+          <input id="breakeven_trigger_points" type="number" step="0.1" value="{control.breakeven_trigger_points}" />
+        </div>
+        <div>
+          <label>Break-even extra points</label>
+          <input id="breakeven_offset_points" type="number" step="0.1" value="{control.breakeven_offset_points}" />
+        </div>
+      </div>
+      <label class="toggle"><input id="trailing_enabled" type="checkbox" {"checked" if control.trailing_enabled else ""} /> Use trailing stop</label>
+      <div class="grid">
+        <div>
+          <label>Trail starts after points</label>
+          <input id="trailing_start_points" type="number" step="0.1" value="{control.trailing_start_points}" />
+        </div>
+        <div>
+          <label>Trail distance points</label>
+          <input id="trailing_distance_points" type="number" step="0.1" value="{control.trailing_distance_points}" />
+        </div>
+      </div>
+      <label>Close trade after minutes</label>
+      <input id="close_after_minutes" type="number" step="1" value="{control.close_after_minutes}" />
+      <label>Max lot</label>
+      <input id="max_lot" type="number" step="0.01" value="{control.max_lot}" />
+      <label>Allowed symbols, comma separated</label>
+      <input id="allowed_symbols" value="{", ".join(control.normalized_symbols())}" />
+      <button class="reset" onclick="saveSettings()">Save TP/SL Settings</button>
+    </div>
   </main>
   <script>
     async function send(path) {{
       const token = document.getElementById('token').value;
       const res = await fetch(path, {{ method: 'POST', headers: token ? {{ 'X-Control-Token': token }} : {{}} }});
+      document.getElementById('result').textContent = await res.text();
+      setTimeout(() => location.reload(), 800);
+    }}
+    async function saveSettings() {{
+      const token = document.getElementById('token').value;
+      const allowedRaw = document.getElementById('allowed_symbols').value;
+      const payload = {{
+        stop_mode: document.getElementById('stop_mode').value,
+        override_sl_points: Number(document.getElementById('override_sl_points').value || 0),
+        override_tp_points: Number(document.getElementById('override_tp_points').value || 0),
+        breakeven_enabled: document.getElementById('breakeven_enabled').checked,
+        breakeven_trigger_points: Number(document.getElementById('breakeven_trigger_points').value || 0),
+        breakeven_offset_points: Number(document.getElementById('breakeven_offset_points').value || 0),
+        trailing_enabled: document.getElementById('trailing_enabled').checked,
+        trailing_start_points: Number(document.getElementById('trailing_start_points').value || 0),
+        trailing_distance_points: Number(document.getElementById('trailing_distance_points').value || 0),
+        close_after_minutes: Number(document.getElementById('close_after_minutes').value || 0),
+        max_lot: Number(document.getElementById('max_lot').value || 0),
+        allowed_symbols: allowedRaw.split(',').map((item) => item.trim()).filter(Boolean)
+      }};
+      const res = await fetch('/control', {{
+        method: 'POST',
+        headers: Object.assign({{ 'Content-Type': 'application/json' }}, token ? {{ 'X-Control-Token': token }} : {{}}),
+        body: JSON.stringify(payload)
+      }});
       document.getElementById('result').textContent = await res.text();
       setTimeout(() => location.reload(), 800);
     }}
@@ -298,6 +427,14 @@ def make_handler(args: argparse.Namespace):
             body = body_text.encode("utf-8")
             self.send_response(status)
             self.send_header("Content-Type", "text/plain; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def send_html(self, body_text: str, status: int = 200) -> None:
+            body = body_text.encode("utf-8")
+            self.send_response(status)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
             self.wfile.write(body)
@@ -334,7 +471,7 @@ def make_handler(args: argparse.Namespace):
             if parsed.path == "/control":
                 accept = self.headers.get("accept", "")
                 if "text/html" in accept:
-                    self.send_text(control_page(control))
+                    self.send_html(control_page(control))
                 else:
                     self.send_json(asdict(control))
                 return
@@ -363,7 +500,23 @@ def make_handler(args: argparse.Namespace):
                 payload = {}
                 if length:
                     payload = json.loads(self.rfile.read(length).decode("utf-8") or "{}")
-                for key in ["trading_enabled", "emergency_stop", "mode", "max_lot", "allowed_symbols"]:
+                for key in [
+                    "trading_enabled",
+                    "emergency_stop",
+                    "mode",
+                    "max_lot",
+                    "allowed_symbols",
+                    "stop_mode",
+                    "override_sl_points",
+                    "override_tp_points",
+                    "breakeven_enabled",
+                    "breakeven_trigger_points",
+                    "breakeven_offset_points",
+                    "trailing_enabled",
+                    "trailing_start_points",
+                    "trailing_distance_points",
+                    "close_after_minutes",
+                ]:
                     if key in payload:
                         setattr(control, key, payload[key])
             elif action == "start":
@@ -381,6 +534,16 @@ def make_handler(args: argparse.Namespace):
                 return
             control.updated_by = self.client_address[0]
             control.max_lot = max(safe_float(control.max_lot, 0.01), 0.0)
+            control.stop_mode = normalized_stop_mode(control.stop_mode)
+            control.override_sl_points = max(safe_float(control.override_sl_points), 0.0)
+            control.override_tp_points = max(safe_float(control.override_tp_points), 0.0)
+            control.breakeven_enabled = safe_bool(control.breakeven_enabled)
+            control.breakeven_trigger_points = max(safe_float(control.breakeven_trigger_points), 0.0)
+            control.breakeven_offset_points = max(safe_float(control.breakeven_offset_points), 0.0)
+            control.trailing_enabled = safe_bool(control.trailing_enabled)
+            control.trailing_start_points = max(safe_float(control.trailing_start_points), 0.0)
+            control.trailing_distance_points = max(safe_float(control.trailing_distance_points), 0.0)
+            control.close_after_minutes = max(safe_float(control.close_after_minutes), 0.0)
             save_control(control_path, control)
             self.send_json({"ok": True, "control": asdict(control)})
 

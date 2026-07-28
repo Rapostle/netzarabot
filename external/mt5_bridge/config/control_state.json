@@ -4,6 +4,16 @@
   "mode": "live",
   "max_lot": 0.01,
   "allowed_symbols": [],
+  "stop_mode": "signal",
+  "override_sl_points": 0.0,
+  "override_tp_points": 0.0,
+  "breakeven_enabled": false,
+  "breakeven_trigger_points": 0.0,
+  "breakeven_offset_points": 0.0,
+  "trailing_enabled": false,
+  "trailing_start_points": 0.0,
+  "trailing_distance_points": 0.0,
+  "close_after_minutes": 0.0,
   "updated_at": "",
   "updated_by": "initial"
 }
