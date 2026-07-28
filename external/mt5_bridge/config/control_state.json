@@ -1,5 +1,5 @@
 {
-  "trading_enabled": false,
+  "trading_enabled": true,
   "emergency_stop": false,
   "mode": "live",
   "max_lot": 0.01,
@@ -14,6 +14,6 @@
   "trailing_start_points": 0.0,
   "trailing_distance_points": 0.0,
   "close_after_minutes": 0.0,
-  "updated_at": "",
-  "updated_by": "initial"
+  "updated_at": "2026-07-28T00:00:00+00:00",
+  "updated_by": "codex_live_enable_requested_by_owner"
 }
