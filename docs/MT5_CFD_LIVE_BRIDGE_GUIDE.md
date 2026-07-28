@@ -1,0 +1,68 @@
+# MT5 / CFD Live Bridge Guide
+
+Use this when the Deriv account only shows CFDs/MT5.
+
+## Why This Is Different
+
+The website Deriv route talks to Deriv Options/DTrader. CFD accounts execute
+inside MT5, so the live version needs an MT5 Expert Advisor.
+
+## What Was Built
+
+- VPS signal server: `external/mt5_bridge/bridge/mt5_signal_server.py`
+- Start script: `external/mt5_bridge/scripts/run_mt5_signal_bridge.sh`
+- MT5 EA: `external/mt5_bridge/ea/NetzaraBotBridgeEA.mq5`
+- Symbol map: `external/mt5_bridge/config/mt5_symbol_map.csv`
+
+## How To Test
+
+1. Start the bridge:
+
+```bash
+external/mt5_bridge/scripts/run_mt5_signal_bridge.sh
+```
+
+2. Open this in a browser:
+
+```text
+http://127.0.0.1:8765/health
+```
+
+3. Check the latest signal:
+
+```text
+http://127.0.0.1:8765/signal
+```
+
+4. In MT5, add this allowed WebRequest URL:
+
+```text
+http://127.0.0.1:8765
+```
+
+5. Compile and attach `NetzaraBotBridgeEA.mq5`.
+
+6. Set `EnableLiveTrading=true` only when ready for MT5 to place real CFD orders.
+
+## VPS Notes
+
+If MT5 runs on a Windows VPS, run the bridge on the same VPS and keep
+`BridgeUrl=http://127.0.0.1:8765/signal`.
+
+If the bridge runs on another machine, use that machine's URL and allow it in
+MT5 WebRequest settings.
+
+## Symbol Names
+
+Deriv MT5 symbol names must match Market Watch exactly. Edit:
+
+```text
+external/mt5_bridge/config/mt5_symbol_map.csv
+```
+
+Use the names shown in MT5, for example:
+
+```text
+BOOM300N,Boom 300 Index
+CRASH300N,Crash 300 Index
+```

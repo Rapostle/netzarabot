@@ -1,0 +1,2 @@
+symbol,timeframe,timestamp,decision,side,confidence,reason,entry,stop_loss,take_profit,quantity,risk_amount,paper_order_id,refresh_status,refresh_error,refreshed_candles
+BOOM300N,15m,2099-01-01T00:00:00+00:00,paper_order,buy,0.82,test bridge sample,960.25,950.25,978.25,0.01,1.0,paper-test,not_requested,,
