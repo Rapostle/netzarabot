@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "TradePilot Auto",
+  title: "NetzaraBot Live",
   description:
-    "Mobile-first Deriv auto-trading app with subscription, referrals, and guarded live execution.",
+    "Mobile-first Deriv live auto-trading app with subscription, referrals, and guarded real-money execution.",
 };
 
 const partnerSignupUrl =
@@ -14,19 +14,19 @@ export default function Home() {
     <main>
       <div className="topbar">
         <div className="logo">
-        <div className="logoMark">IQ</div>
+        <div className="logoMark">NB</div>
         <div>
-            <div>IdenQuanta Auto</div>
-            <small>Mobile Deriv auto-trading app</small>
+            <div>NetzaraBot Live</div>
+            <small>Mobile Deriv live auto-trading app</small>
         </div>
         </div>
-        <div className="pill">Live gate protected</div>
+        <div className="pill">Live trading mode</div>
       </div>
 
       <section className="hero" id="home">
         <div className="heroText">
-          <p className="eyebrow">Recommended brand: IdenQuanta Auto</p>
-          <h1>Hands-free Deriv auto-trading for subscribers.</h1>
+          <p className="eyebrow">NetzaraBot live execution</p>
+          <h1>Hands-free Deriv live auto-trading for subscribers.</h1>
           <p>
             Users pay $50/month, connect Deriv, choose risk limits, and let the
             approved bot trade automatically 24/7. Profit-share tracking is
@@ -98,15 +98,15 @@ export default function Home() {
         </div>
 
         <div className="card">
-          <h2>Safety Gate</h2>
+          <h2>Live Trading Status</h2>
           <div className="status locked">
-            <span>!</span>
+            <span>✓</span>
             <div>
-              Live execution backend is installed
+              Live execution backend is active
               <p>
-                The website can now host Deriv/payment backend routes. Real
-                trading starts after your Deriv app credentials, payment
-                checkout link, user consent, and risk limits are connected.
+                The website supports Deriv/payment backend routes for real-money
+                test trading. Orders still require a connected Deriv token,
+                account ID, explicit consent, and risk limits before submission.
               </p>
             </div>
           </div>
@@ -205,7 +205,7 @@ export default function Home() {
         <div className="setupGrid">
           <div>
             <label>Trading mode</label>
-            <div className="inputLike">Demo auto-trading first</div>
+            <div className="inputLike">Real-money live test</div>
           </div>
           <div>
             <label>Allowed strategy</label>
@@ -257,11 +257,11 @@ export default function Home() {
       <section className="section card">
         <h2>Founder Token Test</h2>
         <p>
-          If you already created a demo Deriv API token, test it privately from
+          If you already created a Deriv API token, test it privately from
           your terminal against `/api/deriv/token/check`. The test checks account
           access and permissions only; it does not place trades.
         </p>
-        <div className="copybox">Token needs Read and Trade permissions. Use demo first.</div>
+        <div className="copybox">Token needs Read and Trade permissions for the account you want to test.</div>
       </section>
 
       <section className="section card" id="tokenGuide">
@@ -273,8 +273,8 @@ export default function Home() {
               <li>Log in to your Deriv account.</li>
               <li>Open the Deriv developers/API area.</li>
               <li>Create a new app.</li>
-              <li>Name it IdenQuanta Auto.</li>
-              <li>Add this redirect URL: https://tradepilot-auto.rapostlesam.chatgpt.site/api/deriv/oauth/callback</li>
+              <li>Name it NetzaraBot Live.</li>
+              <li>Add this redirect URL: https://www.netzarabot.com/api/deriv/oauth/callback</li>
               <li>Enable trading/account scopes required by Deriv.</li>
               <li>Copy the App ID or Client ID and add it to this website backend.</li>
             </ol>
@@ -286,7 +286,7 @@ export default function Home() {
               <li>Choose Connect Deriv OAuth inside the app.</li>
               <li>Approve the requested permissions.</li>
               <li>Set risk controls, including stake, stop loss, take profit, max daily loss, and max open trades.</li>
-              <li>Start with demo auto-trading before real-money mode.</li>
+              <li>Start live mode only after selecting a small test stake and risk limit.</li>
             </ol>
           </div>
         </div>

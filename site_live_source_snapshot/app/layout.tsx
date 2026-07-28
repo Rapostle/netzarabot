@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "TradePilot Auto",
+  title: "NetzaraBot Live",
   description:
-    "Mobile-first Deriv auto-trading app with subscription, referrals, and guarded live execution.",
+    "Mobile-first Deriv live auto-trading app with subscription, referrals, and guarded real-money execution.",
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",
