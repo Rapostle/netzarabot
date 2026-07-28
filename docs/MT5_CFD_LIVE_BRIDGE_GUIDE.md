@@ -51,7 +51,8 @@ Use this page to:
 - Set break-even rules
 - Set trailing stop rules
 - Close trades automatically after a time limit
-- Limit max lot and allowed MT5 symbols
+- Choose fixed lot, bot signal quantity, or account-risk percent lot sizing
+- Limit min lot, max lot, and allowed MT5 symbols
 
 5. In MT5, add this allowed WebRequest URL:
 
@@ -85,9 +86,21 @@ The phone control page has a `TP / SL Settings` section.
 
 These controls are read by the EA through `/control.txt`. They can be changed from your phone without restarting MT5.
 
+## Flexible Lot Sizing
+
+The phone control page has a `Lot Sizing` section.
+
+- `Fixed lot`: always requests the fixed lot you enter.
+- `Use bot signal quantity`: uses the `quantity` value from the latest bot signal, then applies your max-lot cap.
+- `Risk percent of equity`: calculates lot size from account equity, the chosen risk percent, and the distance between entry and stop-loss.
+
+The EA always normalizes the final lot to the broker's allowed volume step. `Max lot cap` remains a hard ceiling in every mode.
+
 Recommended first live-money test settings:
 
 - Max lot: `0.01`
+- Lot mode: `Fixed lot`
+- Fixed lot: `0.01`
 - Stop mode: `Use bot signal TP/SL`
 - Break-even: off until the broker symbol point size is confirmed
 - Trailing stop: off until the broker symbol point size is confirmed

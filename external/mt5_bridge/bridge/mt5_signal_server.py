@@ -30,6 +30,8 @@ class Signal:
     timestamp: str = ""
     age_minutes: float = 0.0
     max_lot: float = 0.01
+    signal_lot: float = 0.0
+    risk_amount: float = 0.0
 
 
 @dataclass
@@ -38,6 +40,10 @@ class ControlState:
     emergency_stop: bool = False
     mode: str = "live"
     max_lot: float = 0.01
+    lot_mode: str = "fixed"
+    fixed_lot: float = 0.01
+    min_lot: float = 0.01
+    risk_percent: float = 0.5
     allowed_symbols: list[str] | None = None
     stop_mode: str = "signal"
     override_sl_points: float = 0.0
@@ -95,6 +101,13 @@ def normalized_stop_mode(value: object) -> str:
     return mode
 
 
+def normalized_lot_mode(value: object) -> str:
+    mode = str(value or "fixed").strip().lower()
+    if mode not in {"fixed", "signal_quantity", "risk_percent"}:
+        return "fixed"
+    return mode
+
+
 def load_symbol_map(path: Path) -> dict[str, str]:
     if not path.exists():
         return {}
@@ -115,6 +128,10 @@ def default_control() -> ControlState:
         emergency_stop=False,
         mode="live",
         max_lot=0.01,
+        lot_mode="fixed",
+        fixed_lot=0.01,
+        min_lot=0.01,
+        risk_percent=0.5,
         allowed_symbols=[],
         stop_mode="signal",
         override_sl_points=0.0,
@@ -148,6 +165,10 @@ def load_control(path: Path) -> ControlState:
         emergency_stop=safe_bool(raw.get("emergency_stop"), False),
         mode=str(raw.get("mode") or "live"),
         max_lot=max(safe_float(raw.get("max_lot"), 0.01), 0.0),
+        lot_mode=normalized_lot_mode(raw.get("lot_mode")),
+        fixed_lot=max(safe_float(raw.get("fixed_lot"), 0.01), 0.0),
+        min_lot=max(safe_float(raw.get("min_lot"), 0.01), 0.0),
+        risk_percent=max(safe_float(raw.get("risk_percent"), 0.5), 0.0),
         allowed_symbols=list(raw.get("allowed_symbols") or []),
         stop_mode=normalized_stop_mode(raw.get("stop_mode")),
         override_sl_points=max(safe_float(raw.get("override_sl_points"), 0.0), 0.0),
@@ -242,6 +263,8 @@ def select_signal(decisions_csv: Path, symbol_map: dict[str, str], requested_sym
         timestamp=signal_time.isoformat(),
         age_minutes=round(max((datetime.now(timezone.utc) - signal_time).total_seconds() / 60.0, 0.0), 2),
         max_lot=control.max_lot if control is not None else 0.01,
+        signal_lot=safe_float(row.get("quantity")),
+        risk_amount=safe_float(row.get("risk_amount")),
     )
 
 
@@ -252,7 +275,8 @@ def text_signal(signal: Signal) -> str:
     return (
         "SIGNAL|"
         f"{signal.signal_id}|{signal.mt5_symbol}|{signal.side}|{signal.entry}|"
-        f"{signal.stop_loss}|{signal.take_profit}|{signal.confidence}|{signal.timestamp}|{reason}|{signal.max_lot}"
+        f"{signal.stop_loss}|{signal.take_profit}|{signal.confidence}|{signal.timestamp}|{reason}|"
+        f"{signal.max_lot}|{signal.signal_lot}|{signal.risk_amount}"
         "\n"
     )
 
@@ -266,7 +290,8 @@ def control_text(control: ControlState) -> str:
         f"{control.stop_mode}|{control.override_sl_points}|{control.override_tp_points}|"
         f"{str(control.breakeven_enabled).lower()}|{control.breakeven_trigger_points}|"
         f"{control.breakeven_offset_points}|{str(control.trailing_enabled).lower()}|"
-        f"{control.trailing_start_points}|{control.trailing_distance_points}|{control.close_after_minutes}"
+        f"{control.trailing_start_points}|{control.trailing_distance_points}|{control.close_after_minutes}|"
+        f"{control.lot_mode}|{control.fixed_lot}|{control.min_lot}|{control.risk_percent}"
         "\n"
     )
 
@@ -305,7 +330,7 @@ def control_page(control: ControlState) -> str:
     <div class="card">
       <small>Status</small>
       <div class="status">{status}</div>
-      <p>Mode: {control.mode} · Max lot: {control.max_lot}</p>
+      <p>Mode: {control.mode} · Lot: {control.lot_mode} · Max lot: {control.max_lot}</p>
       <p>Stops: {control.stop_mode} · SL {control.override_sl_points} pts · TP {control.override_tp_points} pts</p>
       <p>Allowed symbols: {", ".join(control.normalized_symbols()) or "all mapped symbols"}</p>
       <small>Updated: {control.updated_at or "not yet"}</small>
@@ -361,11 +386,39 @@ def control_page(control: ControlState) -> str:
       </div>
       <label>Close trade after minutes</label>
       <input id="close_after_minutes" type="number" step="1" value="{control.close_after_minutes}" />
-      <label>Max lot</label>
-      <input id="max_lot" type="number" step="0.01" value="{control.max_lot}" />
       <label>Allowed symbols, comma separated</label>
       <input id="allowed_symbols" value="{", ".join(control.normalized_symbols())}" />
       <button class="reset" onclick="saveSettings()">Save TP/SL Settings</button>
+    </div>
+    <div class="card">
+      <h2>Lot Sizing</h2>
+      <label>Lot mode</label>
+      <select id="lot_mode">
+        <option value="fixed" {"selected" if control.lot_mode == "fixed" else ""}>Fixed lot</option>
+        <option value="signal_quantity" {"selected" if control.lot_mode == "signal_quantity" else ""}>Use bot signal quantity</option>
+        <option value="risk_percent" {"selected" if control.lot_mode == "risk_percent" else ""}>Risk percent of equity</option>
+      </select>
+      <div class="grid">
+        <div>
+          <label>Fixed lot</label>
+          <input id="fixed_lot" type="number" step="0.01" value="{control.fixed_lot}" />
+        </div>
+        <div>
+          <label>Max lot cap</label>
+          <input id="max_lot" type="number" step="0.01" value="{control.max_lot}" />
+        </div>
+      </div>
+      <div class="grid">
+        <div>
+          <label>Min lot</label>
+          <input id="min_lot" type="number" step="0.01" value="{control.min_lot}" />
+        </div>
+        <div>
+          <label>Risk % of equity</label>
+          <input id="risk_percent" type="number" step="0.1" value="{control.risk_percent}" />
+        </div>
+      </div>
+      <small>Max lot is always a hard cap, even when using signal quantity or risk percent.</small>
     </div>
   </main>
   <script>
@@ -389,7 +442,11 @@ def control_page(control: ControlState) -> str:
         trailing_start_points: Number(document.getElementById('trailing_start_points').value || 0),
         trailing_distance_points: Number(document.getElementById('trailing_distance_points').value || 0),
         close_after_minutes: Number(document.getElementById('close_after_minutes').value || 0),
+        lot_mode: document.getElementById('lot_mode').value,
+        fixed_lot: Number(document.getElementById('fixed_lot').value || 0),
         max_lot: Number(document.getElementById('max_lot').value || 0),
+        min_lot: Number(document.getElementById('min_lot').value || 0),
+        risk_percent: Number(document.getElementById('risk_percent').value || 0),
         allowed_symbols: allowedRaw.split(',').map((item) => item.trim()).filter(Boolean)
       }};
       const res = await fetch('/control', {{
@@ -505,6 +562,10 @@ def make_handler(args: argparse.Namespace):
                     "emergency_stop",
                     "mode",
                     "max_lot",
+                    "lot_mode",
+                    "fixed_lot",
+                    "min_lot",
+                    "risk_percent",
                     "allowed_symbols",
                     "stop_mode",
                     "override_sl_points",
@@ -534,6 +595,10 @@ def make_handler(args: argparse.Namespace):
                 return
             control.updated_by = self.client_address[0]
             control.max_lot = max(safe_float(control.max_lot, 0.01), 0.0)
+            control.lot_mode = normalized_lot_mode(control.lot_mode)
+            control.fixed_lot = max(safe_float(control.fixed_lot, 0.01), 0.0)
+            control.min_lot = max(safe_float(control.min_lot, 0.01), 0.0)
+            control.risk_percent = max(safe_float(control.risk_percent, 0.5), 0.0)
             control.stop_mode = normalized_stop_mode(control.stop_mode)
             control.override_sl_points = max(safe_float(control.override_sl_points), 0.0)
             control.override_tp_points = max(safe_float(control.override_tp_points), 0.0)

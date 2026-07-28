@@ -21,6 +21,10 @@ if text_signal(blocked) != "NO_SIGNAL|trading_stopped\n":
     raise SystemExit("Expected stopped control to block signals")
 
 running = ControlState(trading_enabled=True, emergency_stop=False, max_lot=0.01, allowed_symbols=["Boom 300 Index"])
+running.lot_mode = "risk_percent"
+running.fixed_lot = 0.02
+running.min_lot = 0.01
+running.risk_percent = 0.5
 running.stop_mode = "override_points"
 running.override_sl_points = 100.0
 running.override_tp_points = 180.0
@@ -36,6 +40,8 @@ if "CONTROL|true|false|live|0.01|Boom 300 Index|" not in control_line:
     raise SystemExit("Control payload lost the original EA fields")
 if "|override_points|100.0|180.0|true|80.0|5.0|true|120.0|60.0|45.0" not in control_line:
     raise SystemExit("Control payload did not include TP/SL management fields")
+if "|risk_percent|0.02|0.01|0.5" not in control_line:
+    raise SystemExit("Control payload did not include flexible lot sizing fields")
 signal = select_signal(
     root / "external/mt5_bridge/tests/sample_decisions.csv",
     symbol_map,
@@ -49,4 +55,6 @@ if not line.startswith("SIGNAL|"):
     raise SystemExit("Expected SIGNAL response")
 if "Boom 300 Index|buy|960.25|950.25|978.25" not in line:
     raise SystemExit("Signal payload did not match expected MT5 format")
+if not line.rstrip().endswith("|0.01|0.01|1.0"):
+    raise SystemExit("Signal payload did not include signal lot and risk amount")
 PY

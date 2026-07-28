@@ -24,6 +24,10 @@ string lastSignalId = "";
 bool remoteTradingEnabled = false;
 bool remoteEmergencyStop = false;
 double remoteMaxLot = 0.01;
+string remoteLotMode = "fixed";
+double remoteFixedLot = 0.01;
+double remoteMinLot = 0.01;
+double remoteRiskPercent = 0.5;
 string remoteStopMode = "signal";
 double remoteOverrideSLPoints = 0.0;
 double remoteOverrideTPPoints = 0.0;
@@ -83,6 +87,68 @@ double PointValue(string symbol)
    if(point <= 0.0)
       point = _Point;
    return point;
+}
+
+double NormalizeVolume(string symbol, double volume)
+{
+   double minVolume = SymbolInfoDouble(symbol, SYMBOL_VOLUME_MIN);
+   double maxVolume = SymbolInfoDouble(symbol, SYMBOL_VOLUME_MAX);
+   double step = SymbolInfoDouble(symbol, SYMBOL_VOLUME_STEP);
+   if(minVolume <= 0.0)
+      minVolume = 0.01;
+   if(step <= 0.0)
+      step = 0.01;
+   double hardMax = remoteMaxLot > 0.0 ? remoteMaxLot : maxVolume;
+   if(maxVolume > 0.0)
+      hardMax = MathMin(hardMax, maxVolume);
+   if(remoteMinLot > 0.0)
+      minVolume = MathMax(minVolume, remoteMinLot);
+   volume = MathMin(volume, hardMax);
+   if(volume < minVolume)
+      return 0.0;
+   volume = MathFloor(volume / step) * step;
+   volume = MathMax(volume, minVolume);
+   volume = MathMin(volume, hardMax);
+   return NormalizeDouble(volume, 2);
+}
+
+double LotFromRisk(string symbol, double entryPrice, double stopLoss)
+{
+   if(remoteRiskPercent <= 0.0 || stopLoss <= 0.0 || entryPrice <= 0.0)
+      return 0.0;
+   double tickSize = SymbolInfoDouble(symbol, SYMBOL_TRADE_TICK_SIZE);
+   double tickValue = SymbolInfoDouble(symbol, SYMBOL_TRADE_TICK_VALUE);
+   if(tickSize <= 0.0 || tickValue <= 0.0)
+      return 0.0;
+   double distance = MathAbs(entryPrice - stopLoss);
+   if(distance <= 0.0)
+      return 0.0;
+   double equity = AccountInfoDouble(ACCOUNT_EQUITY);
+   double riskMoney = equity * remoteRiskPercent / 100.0;
+   double riskPerLot = (distance / tickSize) * tickValue;
+   if(riskMoney <= 0.0 || riskPerLot <= 0.0)
+      return 0.0;
+   return riskMoney / riskPerLot;
+}
+
+double CalculateAllowedLot(string symbol, double entryPrice, double stopLoss, double signalLot, double signalMaxLot)
+{
+   double requestedLot = remoteFixedLot > 0.0 ? remoteFixedLot : FixedLot;
+   if(remoteLotMode == "signal_quantity" && signalLot > 0.0)
+      requestedLot = signalLot;
+   else if(remoteLotMode == "risk_percent")
+   {
+      double riskLot = LotFromRisk(symbol, entryPrice, stopLoss);
+      if(riskLot > 0.0)
+         requestedLot = riskLot;
+   }
+
+   double cappedLot = requestedLot;
+   if(signalMaxLot > 0.0)
+      cappedLot = MathMin(cappedLot, signalMaxLot);
+   if(remoteMaxLot > 0.0)
+      cappedLot = MathMin(cappedLot, remoteMaxLot);
+   return NormalizeVolume(symbol, cappedLot);
 }
 
 bool ImprovesStop(long type, double currentSL, double nextSL)
@@ -234,6 +300,8 @@ bool FetchControl()
    remoteTradingEnabled = parts[1] == "true";
    remoteEmergencyStop = parts[2] == "true";
    remoteMaxLot = StringToDouble(parts[4]);
+   if(remoteMaxLot <= 0.0)
+      remoteMaxLot = 0.0;
    if(ArraySize(parts) >= 17)
    {
       remoteStopMode = parts[7];
@@ -246,6 +314,13 @@ bool FetchControl()
       remoteTrailingStartPoints = StringToDouble(parts[14]);
       remoteTrailingDistancePoints = StringToDouble(parts[15]);
       remoteCloseAfterMinutes = StringToDouble(parts[16]);
+   }
+   if(ArraySize(parts) >= 21)
+   {
+      remoteLotMode = parts[17];
+      remoteFixedLot = StringToDouble(parts[18]);
+      remoteMinLot = StringToDouble(parts[19]);
+      remoteRiskPercent = StringToDouble(parts[20]);
    }
    return true;
 }
@@ -291,7 +366,7 @@ void ExecuteSignal(string &parts[])
    double stopLoss = StringToDouble(parts[5]);
    double takeProfit = StringToDouble(parts[6]);
    double signalMaxLot = ArraySize(parts) >= 11 ? StringToDouble(parts[10]) : remoteMaxLot;
-   double allowedLot = MathMin(FixedLot, MathMin(remoteMaxLot, signalMaxLot));
+   double signalLot = ArraySize(parts) >= 12 ? StringToDouble(parts[11]) : 0.0;
 
    if(signalId == lastSignalId || GlobalVariableCheck("NetzaraBot_" + signalId))
       return;
@@ -316,11 +391,6 @@ void ExecuteSignal(string &parts[])
       Print("Emergency stop is active. Signal skipped: ", signalId);
       return;
    }
-   if(allowedLot <= 0.0)
-   {
-      Print("Allowed lot is zero. Signal skipped: ", signalId);
-      return;
-   }
    if(OnePositionPerSymbol && HasOpenPosition(symbol))
    {
       Print("Position already open for ", symbol, ". Signal skipped: ", signalId);
@@ -341,12 +411,24 @@ void ExecuteSignal(string &parts[])
    {
       double ask = SymbolInfoDouble(symbol, SYMBOL_ASK);
       ApplyRemoteStops(symbol, side, ask, stopLoss, takeProfit);
+      double allowedLot = CalculateAllowedLot(symbol, ask, stopLoss, signalLot, signalMaxLot);
+      if(allowedLot <= 0.0)
+      {
+         Print("Allowed lot is zero after flexible lot sizing. Signal skipped: ", signalId);
+         return;
+      }
       ok = trade.Buy(allowedLot, symbol, ask, stopLoss, takeProfit, "NetzaraBot " + signalId);
    }
    else if(side == "sell")
    {
       double bid = SymbolInfoDouble(symbol, SYMBOL_BID);
       ApplyRemoteStops(symbol, side, bid, stopLoss, takeProfit);
+      double allowedLot = CalculateAllowedLot(symbol, bid, stopLoss, signalLot, signalMaxLot);
+      if(allowedLot <= 0.0)
+      {
+         Print("Allowed lot is zero after flexible lot sizing. Signal skipped: ", signalId);
+         return;
+      }
       ok = trade.Sell(allowedLot, symbol, bid, stopLoss, takeProfit, "NetzaraBot " + signalId);
    }
 
