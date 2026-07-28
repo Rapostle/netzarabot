@@ -1,0 +1,7 @@
+Deriv-direct live trading is armed for the owner-requested pilot.
+
+Runtime still requires:
+- DERIV_API_TOKEN
+- ALLOW_REAL_DERIV_DIRECT=true
+- DERIV_DIRECT_CONSENT=I_UNDERSTAND_REAL_MONEY_TRADING
+

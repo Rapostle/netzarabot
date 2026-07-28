@@ -1,6 +1,9 @@
 # NetzaraBot Live Execution Status
 
-Current live-money execution route: **MT5 / CFD bridge**.
+Current live-money execution routes:
+
+- **MT5 / CFD bridge**
+- **Deriv-direct WebSocket engine**
 
 ## Enabled Route
 
@@ -34,14 +37,40 @@ The bridge is live-enabled when:
 - the bridge is running
 - a fresh buy/sell signal exists
 
-## Blocked Route
+## Deriv-Direct Route
 
-This route remains blocked:
+Use this route for Deriv API contract trading:
+
+```text
+external/deriv_direct/deriv_direct_executor.py
+work/run_deriv_direct_dry_run.sh
+work/run_deriv_direct_live_once.sh
+live_candidate/config/deriv_direct_live_config.json
+```
+
+The engine uses Deriv WebSocket calls:
+
+```text
+authorize
+portfolio
+proposal
+buy
+balance
+```
+
+Real buys require:
+
+- `live_candidate/config/ALLOW_REAL_LIVE_TRADING.txt`
+- `DERIV_API_TOKEN`
+- `ALLOW_REAL_DERIV_DIRECT=true`
+- `DERIV_DIRECT_CONSENT=I_UNDERSTAND_REAL_MONEY_TRADING`
+
+## Legacy Status Script
+
+This script now reports the direct-engine status:
 
 ```text
 live_candidate/work/live_order_blocker.py
 ```
 
-That script blocks **Deriv-direct API trading**, not MT5 trading. It does not create orders because no Deriv API order sender exists in `live_candidate`.
-
-Do not treat the missing `live_candidate/config/ALLOW_REAL_LIVE_TRADING.txt` file as proof that the MT5 bridge is disabled. It only means the old Deriv-direct API path is not armed.
+Do not use it as the execution engine. The execution engine is `external/deriv_direct/deriv_direct_executor.py`.

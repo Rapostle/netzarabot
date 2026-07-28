@@ -2,9 +2,15 @@
 
 This is a separate candidate bot package. It lets one focused bot run beside the main research/backtesting system.
 
-Current status: **DEMO / PAPER ONLY for Deriv-direct API**
+Current status: **Deriv-direct engine built; runtime token/consent required**
 
-This package does not place real Deriv API trades.
+The Deriv-direct engine is:
+
+```text
+external/deriv_direct/deriv_direct_executor.py
+```
+
+It can place a real Deriv API buy only when the runtime token, arming file, and consent environment variables are present.
 
 The real-money route currently built in this repo is the MT5/CFD bridge:
 
@@ -74,14 +80,28 @@ live_candidate/work/run_watchlist_demo_monitor.sh
 
 ## Real Live Mode
 
-Deriv-direct real live mode is intentionally blocked in this `live_candidate`
-package because it has no Deriv API order sender.
+Deriv-direct live mode is now handled by:
 
-This command proves that Deriv-direct live trading is blocked:
+```text
+work/run_deriv_direct_live_once.sh
+```
+
+Dry-run first:
 
 ```bash
 cd /Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot
-live_candidate/work/run_real_live_blocked.sh
+export DERIV_API_TOKEN='paste_token_here'
+work/run_deriv_direct_dry_run.sh
+```
+
+Real buy:
+
+```bash
+cd /Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot
+export DERIV_API_TOKEN='paste_token_here'
+export ALLOW_REAL_DERIV_DIRECT=true
+export DERIV_DIRECT_CONSENT=I_UNDERSTAND_REAL_MONEY_TRADING
+work/run_deriv_direct_live_once.sh
 ```
 
 ## Rule

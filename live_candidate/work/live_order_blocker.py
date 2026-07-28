@@ -5,28 +5,32 @@ from pathlib import Path
 
 TASK_ROOT = Path(__file__).resolve().parent.parent.parent
 ARMING_FILE = TASK_ROOT / "live_candidate/config/ALLOW_REAL_LIVE_TRADING.txt"
+DIRECT_ENGINE = TASK_ROOT / "external/deriv_direct/deriv_direct_executor.py"
 
 
 def main() -> int:
-    print("DERIV DIRECT LIVE TRADING BLOCKED")
+    print("DERIV DIRECT LIVE TRADING STATUS")
     print()
-    print("This live-candidate Deriv-direct package is demo/paper-only.")
-    print("It does not place real Deriv API orders and does not read a real token.")
+    print("The old live-candidate blocker does not place orders itself.")
+    print("Deriv-direct execution is now handled by:")
+    print(f"- {DIRECT_ENGINE}")
     print()
-    print("The real-money route currently built for this repo is the MT5/CFD bridge:")
+    print("The MT5/CFD route also remains available:")
     print("- external/mt5_bridge/bridge/mt5_signal_server.py")
     print("- external/mt5_bridge/ea/NetzaraBotBridgeEA.mq5")
     print()
-    print("That MT5 bridge places CFD trades inside MT5 when all are true:")
-    print("- the bridge is running")
-    print("- external/mt5_bridge/config/control_state.json has trading_enabled=true")
-    print("- the MT5 EA input EnableLiveTrading=true")
-    print("- MT5 Algo Trading is enabled")
-    print("- a fresh buy/sell signal exists")
+    print("To run Deriv-direct live once, use:")
+    print("- work/run_deriv_direct_live_once.sh")
     print()
-    print(f"Required future arming file would be: {ARMING_FILE}")
-    print("That file is intentionally absent because this Deriv-direct path has no order sender.")
-    return 2
+    print("Runtime requirements:")
+    print("- DERIV_API_TOKEN")
+    print("- ALLOW_REAL_DERIV_DIRECT=true")
+    print("- DERIV_DIRECT_CONSENT=I_UNDERSTAND_REAL_MONEY_TRADING")
+    print("- fresh buy/sell signal")
+    print()
+    print(f"Arming file: {ARMING_FILE}")
+    print(f"Arming file exists: {ARMING_FILE.exists()}")
+    return 0
 
 
 if __name__ == "__main__":
