@@ -7,7 +7,7 @@ import pandas as pd
 
 
 TASK_ROOT = Path("/Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot")
-BOT_ROOT = Path("/Users/ocmix/Documents/Codex/2026-07-09/can-you-help-implement-in-the")
+BOT_ROOT = Path("/Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot/external/trading_bot")
 OUTPUT_DIR = TASK_ROOT / "outputs"
 BOT_REPORTS = BOT_ROOT / "reports"
 BOT_DATA = BOT_ROOT / "data"

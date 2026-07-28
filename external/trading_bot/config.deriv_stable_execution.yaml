@@ -1,0 +1,22 @@
+deriv:
+  app_id: 1089
+
+instrument_groups:
+  stable_execution:
+    - BOOM300N
+    - CRASH300N
+  crash_boom:
+    - BOOM1000
+    - BOOM150N
+    - BOOM300N
+    - BOOM50
+    - BOOM500
+    - BOOM600
+    - BOOM900
+    - CRASH1000
+    - CRASH150N
+    - CRASH300N
+    - CRASH50
+    - CRASH500
+    - CRASH600
+    - CRASH900

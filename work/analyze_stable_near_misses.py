@@ -8,7 +8,7 @@ from pathlib import Path
 import pandas as pd
 
 
-BOT_ROOT = Path("/Users/ocmix/Documents/Codex/2026-07-09/can-you-help-implement-in-the")
+BOT_ROOT = Path("/Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot/external/trading_bot")
 TASK_ROOT = Path("/Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot")
 DEFAULT_RULES = TASK_ROOT / "outputs/crash_boom_execution_approved_stable_rules_15m_30m.csv"
 DEFAULT_DATA_DIR = TASK_ROOT / "outputs/paper_refreshed_data"

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 TASK_ROOT=/Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot
-BOT_ROOT=/Users/ocmix/Documents/Codex/2026-07-09/can-you-help-implement-in-the
+BOT_ROOT=/Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot/external/trading_bot
 
 cd "$BOT_ROOT"
 
@@ -33,5 +33,5 @@ cd "$BOT_ROOT"
   --audit-output "$TASK_ROOT/outputs/crypto_combined_research_5m.csv"
 
 cd "$TASK_ROOT"
-/Users/ocmix/Documents/Codex/2026-07-09/can-you-help-implement-in-the/.venv/bin/python \
+/Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot/external/trading_bot/.venv/bin/python \
   work/build_crypto_research_report.py

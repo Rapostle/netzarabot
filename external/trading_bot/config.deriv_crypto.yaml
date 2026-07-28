@@ -1,0 +1,19 @@
+deriv:
+  app_id: 1089
+
+instrument_groups:
+  crypto:
+    - cryBTCUSD
+    - cryETHUSD
+    - cryLTCUSD
+    - cryBCHUSD
+    - cryXRPUSD
+    - cryADAUSD
+    - cryDOGEUSD
+    - crySOLUSD
+    - cryBNBUSD
+    - cryUSDCUSD
+    - cryTRXUSD
+  major_crypto:
+    - cryBTCUSD
+    - cryETHUSD

@@ -30,6 +30,9 @@ outputs/service_logs/
 
 # Large downloaded/generated market data
 data/
+external/trading_bot/data/
+!external/trading_bot/trading_bot/data/
+!external/trading_bot/trading_bot/data/*.py
 outputs/*_refreshed_data/
 outputs/paper_refreshed_data/
 outputs/boom_crash_expansion_refreshed_data/
@@ -38,6 +41,7 @@ outputs/strict_research_refreshed_data/
 live_candidate/outputs/refreshed_data/
 
 # Generated build/package artifacts
+external/trading_bot/.venv/
 site_live/
 site_live/dist/
 site_live/node_modules/

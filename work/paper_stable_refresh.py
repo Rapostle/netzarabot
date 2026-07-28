@@ -12,7 +12,7 @@ from pathlib import Path
 import pandas as pd
 
 
-BOT_ROOT = Path("/Users/ocmix/Documents/Codex/2026-07-09/can-you-help-implement-in-the")
+BOT_ROOT = Path("/Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot/external/trading_bot")
 TASK_ROOT = Path("/Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot")
 DEFAULT_RULES = TASK_ROOT / "outputs/crash_boom_execution_approved_stable_rules_15m_30m.csv"
 DEFAULT_OUTPUT = TASK_ROOT / "outputs/paper_stable_rules_decisions.csv"
@@ -135,6 +135,9 @@ def refresh_data(rules: pd.DataFrame, data_dir: Path, count: int, app_id: int, s
 
 
 def run_paper_mode(data_dir: Path, rules_csv: Path, output: Path) -> int:
+    data_dir = data_dir.resolve()
+    rules_csv = rules_csv.resolve()
+    output = output.resolve()
     cmd = [
         str(BOT_ROOT / ".venv/bin/python"),
         "-m",
