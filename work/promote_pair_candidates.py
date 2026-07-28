@@ -7,7 +7,7 @@ from pathlib import Path
 import pandas as pd
 
 
-TASK_ROOT = Path("/Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot")
+TASK_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_RESEARCH_RULES = TASK_ROOT / "outputs/stable_rules_pair_promoted_research_rules.csv"
 DEFAULT_BACKTEST_CANDIDATES = TASK_ROOT / "outputs/stable_rules_pair_backtest_rule_candidates.csv"
 DEFAULT_WALK_FORWARD_RULES = TASK_ROOT / "outputs/stable_rules_pair_walk_forward_rule_summary.csv"

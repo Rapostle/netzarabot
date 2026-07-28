@@ -1,4 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-open /Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot/outputs/monitor_dashboard.html
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+TRADING_BOT_ROOT="${TRADING_BOT_ROOT:-$PROJECT_ROOT/external/trading_bot}"
+if [ -x "$PROJECT_ROOT/.venv/bin/python" ]; then
+  PYTHON_BIN="$PROJECT_ROOT/.venv/bin/python"
+else
+  PYTHON_BIN="$(command -v python3)"
+fi
+
+open $PROJECT_ROOT/outputs/monitor_dashboard.html

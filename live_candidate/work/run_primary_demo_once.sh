@@ -1,23 +1,32 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-cd /Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+TRADING_BOT_ROOT="${TRADING_BOT_ROOT:-$PROJECT_ROOT/external/trading_bot}"
+if [ -x "$PROJECT_ROOT/.venv/bin/python" ]; then
+  PYTHON_BIN="$PROJECT_ROOT/.venv/bin/python"
+else
+  PYTHON_BIN="$(command -v python3)"
+fi
 
-/Users/ocmix/Documents/Codex/2026-07-09/can-you-help-implement-in-the/.venv/bin/python \
+cd $PROJECT_ROOT
+
+$PYTHON_BIN \
   work/paper_stable_refresh.py \
   --track-name "Live candidate primary demo" \
-  --rules-csv /Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot/live_candidate/config/primary_rules.csv \
-  --data-dir /Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot/live_candidate/outputs/refreshed_data \
-  --output /Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot/live_candidate/outputs/primary_decisions.csv \
-  --journal-output /Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot/live_candidate/outputs/primary_journal.csv \
-  --journal-summary-output /Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot/live_candidate/outputs/primary_journal_summary.csv \
-  --open-positions-output /Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot/live_candidate/outputs/primary_open_positions.csv \
-  --closed-trades-output /Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot/live_candidate/outputs/primary_closed_trades.csv \
-  --position-summary-output /Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot/live_candidate/outputs/primary_position_summary.csv \
-  --status-output /Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot/live_candidate/outputs/primary_status.csv \
-  --dashboard-output /Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot/live_candidate/outputs/primary_dashboard.md \
-  --readiness-output /Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot/live_candidate/outputs/primary_readiness.md \
-  --manifest-output /Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot/live_candidate/outputs/primary_refresh_manifest.csv \
+  --rules-csv $PROJECT_ROOT/live_candidate/config/primary_rules.csv \
+  --data-dir $PROJECT_ROOT/live_candidate/outputs/refreshed_data \
+  --output $PROJECT_ROOT/live_candidate/outputs/primary_decisions.csv \
+  --journal-output $PROJECT_ROOT/live_candidate/outputs/primary_journal.csv \
+  --journal-summary-output $PROJECT_ROOT/live_candidate/outputs/primary_journal_summary.csv \
+  --open-positions-output $PROJECT_ROOT/live_candidate/outputs/primary_open_positions.csv \
+  --closed-trades-output $PROJECT_ROOT/live_candidate/outputs/primary_closed_trades.csv \
+  --position-summary-output $PROJECT_ROOT/live_candidate/outputs/primary_position_summary.csv \
+  --status-output $PROJECT_ROOT/live_candidate/outputs/primary_status.csv \
+  --dashboard-output $PROJECT_ROOT/live_candidate/outputs/primary_dashboard.md \
+  --readiness-output $PROJECT_ROOT/live_candidate/outputs/primary_readiness.md \
+  --manifest-output $PROJECT_ROOT/live_candidate/outputs/primary_refresh_manifest.csv \
   --max-open-positions 1 \
   --max-family-side-open 1 \
   --paper-profit-lock-r 2

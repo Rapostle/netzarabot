@@ -1,7 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-cd /Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+TRADING_BOT_ROOT="${TRADING_BOT_ROOT:-$PROJECT_ROOT/external/trading_bot}"
+if [ -x "$PROJECT_ROOT/.venv/bin/python" ]; then
+  PYTHON_BIN="$PROJECT_ROOT/.venv/bin/python"
+else
+  PYTHON_BIN="$(command -v python3)"
+fi
 
-/Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot/external/trading_bot/.venv/bin/python \
+cd $PROJECT_ROOT
+
+$PYTHON_BIN \
   work/mine_stable_pair_candidates.py

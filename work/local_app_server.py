@@ -7,7 +7,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 
-TASK_ROOT = Path("/Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot")
+TASK_ROOT = Path(__file__).resolve().parent.parent
 OUTPUT_DIR = TASK_ROOT / "outputs"
 LOG_DIR = OUTPUT_DIR / "service_logs"
 HOST = "127.0.0.1"

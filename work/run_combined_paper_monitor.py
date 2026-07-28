@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 
-TASK_ROOT = Path("/Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot")
+TASK_ROOT = Path(__file__).resolve().parent.parent
 STABLE_STATUS = TASK_ROOT / "outputs/paper_stable_status.csv"
 
 

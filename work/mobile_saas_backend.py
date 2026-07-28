@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 
-ROOT = Path("/Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot")
+ROOT = Path(__file__).resolve().parent.parent
 OUTPUTS = ROOT / "outputs"
 DB_PATH = OUTPUTS / "mobile_saas_app.db"
 REPORT_PATH = OUTPUTS / "mobile_saas_backend_report.md"
@@ -366,21 +366,21 @@ Reason: {gate.reason}
 Start the full paper suite:
 
 ```bash
-cd /Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot
+cd /path/to/netzarabot
 work/start_trading_bot_suite.sh
 ```
 
 Check status:
 
 ```bash
-cd /Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot
+cd /path/to/netzarabot
 work/check_bot_status.sh
 ```
 
 Open the local app:
 
 ```bash
-cd /Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot
+cd /path/to/netzarabot
 work/start_local_app.sh
 ```
 

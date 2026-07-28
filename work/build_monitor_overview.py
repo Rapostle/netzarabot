@@ -6,7 +6,7 @@ from pathlib import Path
 import pandas as pd
 
 
-TASK_ROOT = Path("/Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot")
+TASK_ROOT = Path(__file__).resolve().parent.parent
 OUTPUT = TASK_ROOT / "outputs/monitor_overview.md"
 HTML_OUTPUT = TASK_ROOT / "outputs/monitor_dashboard.html"
 ALERT_OUTPUT = TASK_ROOT / "outputs/monitor_alerts.md"

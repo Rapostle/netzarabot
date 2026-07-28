@@ -1,4 +1,5 @@
 from __future__ import annotations
+import os
 
 import argparse
 import sys
@@ -8,8 +9,8 @@ from pathlib import Path
 import pandas as pd
 
 
-BOT_ROOT = Path("/Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot/external/trading_bot")
-TASK_ROOT = Path("/Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot")
+BOT_ROOT = Path(os.environ.get("TRADING_BOT_ROOT", str(Path(__file__).resolve().parent.parent / "external" / "trading_bot")))
+TASK_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_APPROVED_RULES = TASK_ROOT / "outputs/crash_boom_execution_approved_stable_rules_15m_30m.csv"
 DEFAULT_DATA_DIR = TASK_ROOT / "outputs/paper_refreshed_data"
 DEFAULT_CANDIDATES = TASK_ROOT / "outputs/stable_rules_pair_research_candidates.csv"

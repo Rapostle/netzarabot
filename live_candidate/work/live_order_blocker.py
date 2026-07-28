@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 
-TASK_ROOT = Path("/Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot")
+TASK_ROOT = Path(__file__).resolve().parent.parent.parent
 ARMING_FILE = TASK_ROOT / "live_candidate/config/ALLOW_REAL_LIVE_TRADING.txt"
 
 

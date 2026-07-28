@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 
-TASK_ROOT = Path("/Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot")
+TASK_ROOT = Path(__file__).resolve().parent.parent
 OUTPUT_DIR = TASK_ROOT / "outputs"
 DOCS_DIR = TASK_ROOT / "docs"
 RELEASE_DIR = TASK_ROOT / "releases/v0.1-paper-alpha"

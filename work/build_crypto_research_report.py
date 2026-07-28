@@ -1,4 +1,5 @@
 from __future__ import annotations
+import os
 
 from datetime import datetime, timezone
 from pathlib import Path
@@ -6,8 +7,8 @@ from pathlib import Path
 import pandas as pd
 
 
-TASK_ROOT = Path("/Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot")
-BOT_ROOT = Path("/Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot/external/trading_bot")
+TASK_ROOT = Path(__file__).resolve().parent.parent
+BOT_ROOT = Path(os.environ.get("TRADING_BOT_ROOT", str(Path(__file__).resolve().parent.parent / "external" / "trading_bot")))
 OUTPUT_DIR = TASK_ROOT / "outputs"
 BOT_REPORTS = BOT_ROOT / "reports"
 BOT_DATA = BOT_ROOT / "data"

@@ -1,7 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-cd /Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+TRADING_BOT_ROOT="${TRADING_BOT_ROOT:-$PROJECT_ROOT/external/trading_bot}"
+if [ -x "$PROJECT_ROOT/.venv/bin/python" ]; then
+  PYTHON_BIN="$PROJECT_ROOT/.venv/bin/python"
+else
+  PYTHON_BIN="$(command -v python3)"
+fi
+
+cd $PROJECT_ROOT
 
 work/run_monitor_overview.sh >/dev/null
 
@@ -128,12 +137,12 @@ if [[ -f outputs/final_gap_report.md ]]; then
 fi
 
 printf 'Full dashboard file:\n'
-printf '%s\n' '/Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot/outputs/monitor_dashboard.html'
+printf '%s\n' '$PROJECT_ROOT/outputs/monitor_dashboard.html'
 printf 'Expansion control dashboard file:\n'
-printf '%s\n' '/Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot/outputs/expansion_control_dashboard.html'
+printf '%s\n' '$PROJECT_ROOT/outputs/expansion_control_dashboard.html'
 printf 'App dashboard file:\n'
-printf '%s\n' '/Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot/outputs/trading_bot_app_dashboard.html'
+printf '%s\n' '$PROJECT_ROOT/outputs/trading_bot_app_dashboard.html'
 printf 'Operator console file:\n'
-printf '%s\n' '/Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot/outputs/operator_console.html'
+printf '%s\n' '$PROJECT_ROOT/outputs/operator_console.html'
 printf 'Local clickable app command:\n'
 printf '%s\n' 'work/start_local_app.sh'

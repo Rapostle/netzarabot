@@ -1,43 +1,52 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-cd /Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+TRADING_BOT_ROOT="${TRADING_BOT_ROOT:-$PROJECT_ROOT/external/trading_bot}"
+if [ -x "$PROJECT_ROOT/.venv/bin/python" ]; then
+  PYTHON_BIN="$PROJECT_ROOT/.venv/bin/python"
+else
+  PYTHON_BIN="$(command -v python3)"
+fi
 
-/Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot/external/trading_bot/.venv/bin/python \
+cd $PROJECT_ROOT
+
+$PYTHON_BIN \
   work/build_monitor_overview.py
 
-/Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot/external/trading_bot/.venv/bin/python \
+$PYTHON_BIN \
   work/build_paper_performance_report.py
 
-/Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot/external/trading_bot/.venv/bin/python \
+$PYTHON_BIN \
   work/build_manual_review_package.py
 
-/Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot/external/trading_bot/.venv/bin/python \
+$PYTHON_BIN \
   work/build_strict_research_lane.py
 
-/Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot/external/trading_bot/.venv/bin/python \
+$PYTHON_BIN \
   work/build_crypto_research_report.py
 
-/Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot/external/trading_bot/.venv/bin/python \
+$PYTHON_BIN \
   work/build_app_intelligence.py
 
-/Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot/external/trading_bot/.venv/bin/python \
+$PYTHON_BIN \
   work/build_expansion_monitor_template_report.py
 
-/Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot/external/trading_bot/.venv/bin/python \
+$PYTHON_BIN \
   work/build_supervision_tools.py
 
-/Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot/external/trading_bot/.venv/bin/python \
+$PYTHON_BIN \
   work/build_expansion_control.py
 
-/Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot/external/trading_bot/.venv/bin/python \
+$PYTHON_BIN \
   work/build_product_layer.py
 
-/Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot/external/trading_bot/.venv/bin/python \
+$PYTHON_BIN \
   work/build_release_package.py
 
-/Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot/external/trading_bot/.venv/bin/python \
+$PYTHON_BIN \
   work/stale_trade_cleanup.py
 
-/Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot/external/trading_bot/.venv/bin/python \
+$PYTHON_BIN \
   work/build_launch_assets.py
