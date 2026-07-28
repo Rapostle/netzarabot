@@ -1,25 +1,43 @@
 {
   "enabled": true,
   "allow_real_trading": true,
-  "app_id": "33WUEqwrjIBQoN56ndUoJ",
+  "app_id": "1089",
   "arming_file": "live_candidate/config/ALLOW_REAL_LIVE_TRADING.txt",
-  "decisions_csv": "outputs/pair_candidate_paper_decisions.csv",
   "journal_csv": "outputs/deriv_direct_order_journal.csv",
+  "qualification_csv": "outputs/deriv_direct_track_qualification.csv",
   "currency": "USD",
-  "basis": "stake",
   "stake": 1.0,
   "max_stake": 1.0,
   "max_daily_stake": 5.0,
-  "max_daily_orders": 3,
   "max_open_contracts": 1,
   "min_confidence": 0.7,
   "max_signal_age_minutes": 30.0,
-  "duration": 5,
-  "duration_unit": "m",
   "allowed_symbols": ["BOOM300N", "CRASH300N"],
-  "symbol_contract_map": {
-    "BOOM300N": {"buy": "CALL", "sell": "PUT"},
-    "CRASH300N": {"buy": "CALL", "sell": "PUT"}
-  }
+  "tracks": [
+    {
+      "name": "Experimental pair candidates",
+      "decisions_csv": "outputs/pair_candidate_paper_decisions.csv",
+      "closed_trades_csv": "outputs/pair_candidate_closed_trades.csv"
+    },
+    {
+      "name": "Advanced sniper candidates",
+      "decisions_csv": "outputs/advanced_sniper_paper_decisions.csv",
+      "closed_trades_csv": "outputs/advanced_sniper_closed_trades.csv"
+    },
+    {
+      "name": "Boom/Crash expansion candidates",
+      "decisions_csv": "outputs/boom_crash_expansion_paper_decisions.csv",
+      "closed_trades_csv": "outputs/boom_crash_expansion_closed_trades.csv"
+    },
+    {
+      "name": "Original stable rules",
+      "decisions_csv": "outputs/paper_stable_rules_decisions.csv",
+      "closed_trades_csv": "outputs/paper_stable_closed_trades.csv"
+    },
+    {
+      "name": "Strict research candidates",
+      "decisions_csv": "outputs/strict_research_paper_decisions.csv",
+      "closed_trades_csv": "outputs/strict_research_closed_trades.csv"
+    }
+  ]
 }
-
