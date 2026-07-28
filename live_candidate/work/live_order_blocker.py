@@ -8,20 +8,24 @@ ARMING_FILE = TASK_ROOT / "live_candidate/config/ALLOW_REAL_LIVE_TRADING.txt"
 
 
 def main() -> int:
-    print("LIVE TRADING BLOCKED")
+    print("DERIV DIRECT LIVE TRADING BLOCKED")
     print()
-    print("This live-candidate package is demo/paper-only.")
-    print("It does not place real Deriv orders and does not read a real token.")
+    print("This live-candidate Deriv-direct package is demo/paper-only.")
+    print("It does not place real Deriv API orders and does not read a real token.")
     print()
-    print("A future real-money pilot must be built as a separate step after:")
-    print("- more paper evidence")
-    print("- manual review")
-    print("- daily loss limit")
-    print("- emergency stop-all")
-    print("- explicit arming file")
+    print("The real-money route currently built for this repo is the MT5/CFD bridge:")
+    print("- external/mt5_bridge/bridge/mt5_signal_server.py")
+    print("- external/mt5_bridge/ea/NetzaraBotBridgeEA.mq5")
+    print()
+    print("That MT5 bridge places CFD trades inside MT5 when all are true:")
+    print("- the bridge is running")
+    print("- external/mt5_bridge/config/control_state.json has trading_enabled=true")
+    print("- the MT5 EA input EnableLiveTrading=true")
+    print("- MT5 Algo Trading is enabled")
+    print("- a fresh buy/sell signal exists")
     print()
     print(f"Required future arming file would be: {ARMING_FILE}")
-    print("That file is intentionally absent.")
+    print("That file is intentionally absent because this Deriv-direct path has no order sender.")
     return 2
 
 

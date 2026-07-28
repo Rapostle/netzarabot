@@ -2,9 +2,17 @@
 
 This is a separate candidate bot package. It lets one focused bot run beside the main research/backtesting system.
 
-Current status: **DEMO / PAPER ONLY**
+Current status: **DEMO / PAPER ONLY for Deriv-direct API**
 
-It does not place real trades.
+This package does not place real Deriv API trades.
+
+The real-money route currently built in this repo is the MT5/CFD bridge:
+
+```text
+external/mt5_bridge
+```
+
+Use that route for Deriv MT5/CFD accounts.
 
 ## What It Trades In Demo
 
@@ -66,9 +74,10 @@ live_candidate/work/run_watchlist_demo_monitor.sh
 
 ## Real Live Mode
 
-Real live mode is intentionally blocked.
+Deriv-direct real live mode is intentionally blocked in this `live_candidate`
+package because it has no Deriv API order sender.
 
-This command proves that live trading is blocked:
+This command proves that Deriv-direct live trading is blocked:
 
 ```bash
 cd /Users/ocmix/Documents/Codex/2026-07-09/continue-working-on-my-trading-bot
@@ -78,6 +87,18 @@ live_candidate/work/run_real_live_blocked.sh
 ## Rule
 
 Keep the main research bot running separately. This candidate package collects separate paper evidence for a future tiny live pilot.
+
+## Current Live Execution Route
+
+For real-money CFD testing, use:
+
+```text
+external/mt5_bridge/ea/NetzaraBotBridgeEA.mq5
+external/mt5_bridge/bridge/mt5_signal_server.py
+external/mt5_bridge/config/control_state.json
+```
+
+That route has the live switch, TP/SL controls, flexible lot sizing, and emergency stop controls.
 
 ## MT5 And Telegram
 
