@@ -7,6 +7,8 @@ python3 "$ROOT/external/mt5_bridge/bridge/mt5_signal_server.py" \
   --repo-root "$ROOT" \
   --decisions-csv "$ROOT/outputs/pair_candidate_paper_decisions.csv" \
   --symbol-map "$ROOT/external/mt5_bridge/config/mt5_symbol_map.csv" \
+  --control-state "$ROOT/external/mt5_bridge/config/control_state.json" \
+  --control-token "${NETZARABOT_CONTROL_TOKEN:-}" \
   --host 127.0.0.1 \
   --port 8765 \
   --max-signal-age-minutes 30

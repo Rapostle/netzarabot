@@ -13,6 +13,7 @@ inside MT5, so the live version needs an MT5 Expert Advisor.
 - Start script: `external/mt5_bridge/scripts/run_mt5_signal_bridge.sh`
 - MT5 EA: `external/mt5_bridge/ea/NetzaraBotBridgeEA.mq5`
 - Symbol map: `external/mt5_bridge/config/mt5_symbol_map.csv`
+- Mobile/VPS control state: `external/mt5_bridge/config/control_state.json`
 
 ## How To Test
 
@@ -34,15 +35,37 @@ http://127.0.0.1:8765/health
 http://127.0.0.1:8765/signal
 ```
 
-4. In MT5, add this allowed WebRequest URL:
+4. Open the phone/mobile control page:
+
+```text
+http://127.0.0.1:8765/control
+```
+
+Use this page to:
+
+- Start Trading
+- Stop Trading
+- Emergency Stop
+- Reset Emergency Stop
+
+5. In MT5, add this allowed WebRequest URL:
 
 ```text
 http://127.0.0.1:8765
 ```
 
-5. Compile and attach `NetzaraBotBridgeEA.mq5`.
+6. Compile and attach `NetzaraBotBridgeEA.mq5`.
 
-6. Set `EnableLiveTrading=true` only when ready for MT5 to place real CFD orders.
+7. Set `EnableLiveTrading=true` only when ready for MT5 to place real CFD orders.
+
+8. Tap `Start Trading` from the phone control page.
+
+The EA will not trade unless both are true:
+
+- EA input `EnableLiveTrading=true`
+- Phone/VPS control `trading_enabled=true`
+
+Emergency Stop overrides everything.
 
 ## VPS Notes
 
@@ -51,6 +74,16 @@ If MT5 runs on a Windows VPS, run the bridge on the same VPS and keep
 
 If the bridge runs on another machine, use that machine's URL and allow it in
 MT5 WebRequest settings.
+
+If you want to control it from your phone outside the VPS, expose the bridge
+through a protected URL and set a control token:
+
+```bash
+export NETZARABOT_CONTROL_TOKEN="choose-a-long-private-password"
+external/mt5_bridge/scripts/run_mt5_signal_bridge.sh
+```
+
+Then open the control URL on your phone and enter that token.
 
 ## Symbol Names
 

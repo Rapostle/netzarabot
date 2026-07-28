@@ -14,6 +14,7 @@ shows CFDs, use this bridge instead:
 - `bridge/mt5_signal_server.py` - lightweight HTTP signal server.
 - `ea/NetzaraBotBridgeEA.mq5` - MT5 Expert Advisor.
 - `config/mt5_symbol_map.csv` - maps bot symbols to Deriv MT5 symbols.
+- `config/control_state.json` - mobile/VPS start-stop control state.
 - `scripts/run_mt5_signal_bridge.sh` - starts the bridge locally/VPS.
 
 ## Start The Bridge
@@ -36,6 +37,19 @@ Default URL:
 http://127.0.0.1:8765
 ```
 
+Mobile control page:
+
+```text
+http://127.0.0.1:8765/control
+```
+
+If you expose the bridge beyond the VPS, set a control token first:
+
+```bash
+export NETZARABOT_CONTROL_TOKEN="choose-a-long-private-password"
+external/mt5_bridge/scripts/run_mt5_signal_bridge.sh
+```
+
 ## MT5 Setup
 
 1. Open MT5.
@@ -51,6 +65,7 @@ http://127.0.0.1:8765
 
 7. Attach `NetzaraBotBridgeEA` to the Deriv MT5 symbol chart.
 8. Set `EnableLiveTrading=true` only when you want MT5 to place real CFD orders.
+9. Use the mobile control page to start/stop trading remotely.
 
 ## Important MT5 Symbol Mapping
 

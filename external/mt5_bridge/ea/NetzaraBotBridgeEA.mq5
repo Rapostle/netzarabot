@@ -8,6 +8,7 @@
 #include <Trade/Trade.mqh>
 
 input string BridgeUrl = "http://127.0.0.1:8765/signal";
+input string ControlUrl = "http://127.0.0.1:8765/control.txt";
 input bool EnableLiveTrading = false;
 input double FixedLot = 0.01;
 input int PollSeconds = 15;
@@ -19,6 +20,9 @@ input bool UseSignalStops = true;
 CTrade trade;
 datetime lastPoll = 0;
 string lastSignalId = "";
+bool remoteTradingEnabled = false;
+bool remoteEmergencyStop = false;
+double remoteMaxLot = 0.01;
 
 string Trim(string value)
 {
@@ -91,6 +95,40 @@ bool FetchSignal(string &body)
    return true;
 }
 
+bool FetchControl()
+{
+   char data[];
+   char result[];
+   string headers = "";
+   string resultHeaders = "";
+   ResetLastError();
+   int status = WebRequest("GET", ControlUrl, headers, 8000, data, result, resultHeaders);
+   if(status == -1)
+   {
+      Print("Control WebRequest failed. Add bridge URL in MT5 Tools > Options > Expert Advisors. Error: ", GetLastError());
+      remoteTradingEnabled = false;
+      return false;
+   }
+   string body = CharArrayToString(result, 0, -1, CP_UTF8);
+   if(status < 200 || status >= 300)
+   {
+      Print("Control endpoint returned HTTP ", status, ": ", body);
+      remoteTradingEnabled = false;
+      return false;
+   }
+   string parts[];
+   if(!SplitSignal(body, parts) || parts[0] != "CONTROL" || ArraySize(parts) < 5)
+   {
+      Print("Invalid control response: ", body);
+      remoteTradingEnabled = false;
+      return false;
+   }
+   remoteTradingEnabled = parts[1] == "true";
+   remoteEmergencyStop = parts[2] == "true";
+   remoteMaxLot = StringToDouble(parts[4]);
+   return true;
+}
+
 void ExecuteSignal(string &parts[])
 {
    if(parts[0] != "SIGNAL")
@@ -101,6 +139,8 @@ void ExecuteSignal(string &parts[])
    string side = parts[3];
    double stopLoss = StringToDouble(parts[5]);
    double takeProfit = StringToDouble(parts[6]);
+   double signalMaxLot = ArraySize(parts) >= 11 ? StringToDouble(parts[10]) : remoteMaxLot;
+   double allowedLot = MathMin(FixedLot, MathMin(remoteMaxLot, signalMaxLot));
 
    if(signalId == lastSignalId || GlobalVariableCheck("NetzaraBot_" + signalId))
       return;
@@ -113,6 +153,21 @@ void ExecuteSignal(string &parts[])
    {
       Print("Live trading disabled. Signal received but not executed: ", signalId);
       lastSignalId = signalId;
+      return;
+   }
+   if(!remoteTradingEnabled)
+   {
+      Print("Phone/VPS control says trading is stopped. Signal skipped: ", signalId);
+      return;
+   }
+   if(remoteEmergencyStop)
+   {
+      Print("Emergency stop is active. Signal skipped: ", signalId);
+      return;
+   }
+   if(allowedLot <= 0.0)
+   {
+      Print("Allowed lot is zero. Signal skipped: ", signalId);
       return;
    }
    if(OnePositionPerSymbol && HasOpenPosition(symbol))
@@ -134,12 +189,12 @@ void ExecuteSignal(string &parts[])
    if(side == "buy")
    {
       double ask = SymbolInfoDouble(symbol, SYMBOL_ASK);
-      ok = trade.Buy(FixedLot, symbol, ask, UseSignalStops ? stopLoss : 0.0, UseSignalStops ? takeProfit : 0.0, "NetzaraBot " + signalId);
+      ok = trade.Buy(allowedLot, symbol, ask, UseSignalStops ? stopLoss : 0.0, UseSignalStops ? takeProfit : 0.0, "NetzaraBot " + signalId);
    }
    else if(side == "sell")
    {
       double bid = SymbolInfoDouble(symbol, SYMBOL_BID);
-      ok = trade.Sell(FixedLot, symbol, bid, UseSignalStops ? stopLoss : 0.0, UseSignalStops ? takeProfit : 0.0, "NetzaraBot " + signalId);
+      ok = trade.Sell(allowedLot, symbol, bid, UseSignalStops ? stopLoss : 0.0, UseSignalStops ? takeProfit : 0.0, "NetzaraBot " + signalId);
    }
 
    if(ok)
@@ -166,6 +221,10 @@ void OnTick()
    if(TimeCurrent() - lastPoll < PollSeconds)
       return;
    lastPoll = TimeCurrent();
+
+   FetchControl();
+   if(!remoteTradingEnabled || remoteEmergencyStop)
+      return;
 
    string body = "";
    if(!FetchSignal(body))

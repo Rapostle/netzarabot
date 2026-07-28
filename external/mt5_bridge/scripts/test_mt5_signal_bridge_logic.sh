@@ -5,15 +5,28 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 
 python3 - <<'PY'
 from pathlib import Path
-from external.mt5_bridge.bridge.mt5_signal_server import load_symbol_map, select_signal, text_signal
+from external.mt5_bridge.bridge.mt5_signal_server import ControlState, load_symbol_map, select_signal, text_signal
 
 root = Path.cwd()
 symbol_map = load_symbol_map(root / "external/mt5_bridge/config/mt5_symbol_map.csv")
+stopped = ControlState(trading_enabled=False, emergency_stop=False, max_lot=0.01, allowed_symbols=[])
+blocked = select_signal(
+    root / "external/mt5_bridge/tests/sample_decisions.csv",
+    symbol_map,
+    "Boom 300 Index",
+    99999999,
+    stopped,
+)
+if text_signal(blocked) != "NO_SIGNAL|trading_stopped\n":
+    raise SystemExit("Expected stopped control to block signals")
+
+running = ControlState(trading_enabled=True, emergency_stop=False, max_lot=0.01, allowed_symbols=["Boom 300 Index"])
 signal = select_signal(
     root / "external/mt5_bridge/tests/sample_decisions.csv",
     symbol_map,
     "Boom 300 Index",
     99999999,
+    running,
 )
 line = text_signal(signal)
 print(line, end="")
