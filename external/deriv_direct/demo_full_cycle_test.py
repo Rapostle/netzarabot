@@ -4,11 +4,10 @@ import asyncio, os, sys, time
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 try:
-    import deriv_direct_executor as ex
-    import deriv_position_manager as mgr
-except ImportError:
     import deriv_direct_executor_v2 as ex
-    import deriv_position_manager as mgr
+except ImportError:
+    import deriv_direct_executor as ex
+import deriv_position_manager as mgr
 
 ex.load_env_file()
 root = Path(__file__).resolve().parents[2]

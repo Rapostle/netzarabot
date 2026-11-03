@@ -26,9 +26,9 @@ import websockets
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 try:
+    import deriv_direct_executor_v2 as ex  # the server keeps the new executor under this name
+except ImportError:
     import deriv_direct_executor as ex
-except ImportError:  # the server keeps the new executor under this name
-    import deriv_direct_executor_v2 as ex
 
 CLOSED_FIELDS = [
     "contract_id", "mode", "track_name", "symbol", "timeframe", "side", "opened_at", "closed_at",
