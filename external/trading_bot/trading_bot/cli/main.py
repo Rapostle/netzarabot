@@ -276,6 +276,20 @@ def build_paper_decision(symbol: str, timeframe: str, df: pd.DataFrame, rules: p
     }
 
 
+def completed_candles(df: pd.DataFrame, seconds: int, now: pd.Timestamp | None = None) -> pd.DataFrame:
+    """Drops the candle that is still forming.
+
+    Deriv's newest candle is the one in progress, so its body, range and indicators keep changing until it
+    closes. The rules were found on finished candles, so they must be judged on finished candles too.
+    Set PAPER_USE_PARTIAL_CANDLE=1 to get the old behaviour back.
+    """
+    if df.empty or os.environ.get("PAPER_USE_PARTIAL_CANDLE") == "1":
+        return df
+    now = now if now is not None else pd.Timestamp.now(tz="UTC")
+    closed = df["timestamp"] + pd.Timedelta(seconds=seconds) <= now
+    return df[closed].reset_index(drop=True)
+
+
 def run_paper_stable_rules(args: argparse.Namespace, config: dict) -> int:
     rules = pd.read_csv(args.rules_csv)
     data_dir = Path(args.data_dir or "data")
@@ -288,7 +302,8 @@ def run_paper_stable_rules(args: argparse.Namespace, config: dict) -> int:
         if not path.exists():
             rows.append({column: "" for column in DECISION_COLUMNS} | {"symbol": symbol, "timeframe": timeframe, "decision": "no_data", "side": "hold", "confidence": 0.0, "reason": f"missing candle file: {path}"})
             continue
-        df = add_indicators(load_ohlcv_csv(path)).tail(args.max_rows).reset_index(drop=True)
+        df = completed_candles(load_ohlcv_csv(path), timeframe_seconds(timeframe))
+        df = add_indicators(df).tail(args.max_rows).reset_index(drop=True) if not df.empty else df
         if df.empty:
             rows.append({column: "" for column in DECISION_COLUMNS} | {"symbol": symbol, "timeframe": timeframe, "decision": "no_data", "side": "hold", "confidence": 0.0, "reason": "empty candle file"})
             continue
