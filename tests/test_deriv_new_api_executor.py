@@ -261,5 +261,17 @@ class ManagerTests(unittest.TestCase):
         self.assertEqual(saved[0]["stop_loss_amount"], 0.4)   # test config stake is $2: 2 * 20 * 1%
 
 
+class DedupeTests(unittest.TestCase):
+    def test_signal_already_bought_is_skipped_even_from_another_track(self):
+        tmp = tempfile.mkdtemp(); c = cfg(tmp)
+        ex.write_journal_row(Path(c.journal_csv), {"status": "bought", "signal_id": "trackA~x", "message": f"bought {ex.signal_key(SIG)}"})
+        ex.write_journal_row(Path(c.journal_csv), {"status": "error", "signal_id": "trackB~y", "message": "boom"})
+        keys = ex.traded_keys(c)
+        self.assertIn("trackA~x", keys); self.assertIn(ex.signal_key(SIG), keys)
+        self.assertNotIn("trackB~y", keys)           # errors do not count as traded
+        other_track_same_entry = ex.CandidateSignal("trackB", "BOOM300N", "15m", SIG.timestamp, "buy", "buy", 0.8, "r", 100.0, 99.0, 102.0, 1, 1, "trackB~z")
+        self.assertIn(ex.signal_key(other_track_same_entry), keys)
+
+
 if __name__ == "__main__":
     unittest.main()

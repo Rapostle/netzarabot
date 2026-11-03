@@ -394,15 +394,34 @@ def latest_track_signal(track: TrackConfig, config: DerivDirectConfig) -> tuple[
     return sorted(candidates, key=lambda item: item[0], reverse=True)[0]
 
 
+def signal_key(signal: CandidateSignal) -> str:
+    """Same market entry seen by several tracks shares one key."""
+    return f"{signal.symbol}|{signal.side}|{signal.timestamp}"
+
+
+def traded_keys(config: DerivDirectConfig) -> set[str]:
+    keys: set[str] = set()
+    for row in read_rows(Path(config.journal_csv)):
+        if row.get("status") != "bought":
+            continue
+        if row.get("signal_id"):
+            keys.add(row["signal_id"])
+        message = row.get("message", "")
+        if "|" in message:
+            keys.add(message.split(" ", 1)[1] if " " in message else message)
+    return keys
+
+
 def select_signal(config: DerivDirectConfig) -> tuple[CandidateSignal | None, list[TrackQualification]]:
     qualifications = [qualify_track(track) for track in config.tracks]
     track_by_name = {track.name: track for track in config.tracks}
     candidates: list[tuple[datetime, CandidateSignal]] = []
+    done = traded_keys(config)
     for qualification in qualifications:
         if not qualification.qualified:
             continue
         candidate = latest_track_signal(track_by_name[qualification.name], config)
-        if candidate is not None:
+        if candidate is not None and not ({candidate[1].signal_id, signal_key(candidate[1])} & done):
             candidates.append(candidate)
     selected = sorted(candidates, key=lambda item: item[0], reverse=True)[0][1] if candidates else None
     return selected, qualifications
@@ -780,7 +799,7 @@ def main() -> int:
                 "contract_id": buy.get("contract_id", ""),
                 "buy_price": buy.get("buy_price", ""),
                 "balance_after": balance.get("balance", ""),
-                "message": status,
+                "message": f"{status} {signal_key(selected)}" if status == "bought" else status,
             },
         )
         print(json.dumps(response_payload(status, config, qualifications, selected, plan, result), indent=2))
