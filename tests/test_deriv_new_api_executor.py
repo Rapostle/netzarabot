@@ -273,5 +273,22 @@ class DedupeTests(unittest.TestCase):
         self.assertIn(ex.signal_key(other_track_same_entry), keys)
 
 
+class NotifyTests(unittest.TestCase):
+    def test_notify_is_silent_without_credentials_and_never_raises(self):
+        for k in ("TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID"):
+            os.environ.pop(k, None)
+        self.assertFalse(ex.notify("hello"))
+
+    def test_notify_swallows_network_errors(self):
+        os.environ["TELEGRAM_BOT_TOKEN"] = "x"; os.environ["TELEGRAM_CHAT_ID"] = "1"
+        try:
+            real = ex.urllib.request.urlopen
+            ex.urllib.request.urlopen = lambda *a, **k: (_ for _ in ()).throw(OSError("down"))
+            self.assertFalse(ex.notify("hello"))
+        finally:
+            ex.urllib.request.urlopen = real
+            os.environ.pop("TELEGRAM_BOT_TOKEN"); os.environ.pop("TELEGRAM_CHAT_ID")
+
+
 if __name__ == "__main__":
     unittest.main()

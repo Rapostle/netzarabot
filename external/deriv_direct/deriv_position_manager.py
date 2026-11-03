@@ -95,6 +95,10 @@ def journal_close(config: ex.DerivDirectConfig, position: dict[str, Any], contra
     row = dict(position)
     row.update({"closed_at": ex.utc_now(), "sell_price": sell_price, "pnl": pnl, "exit_reason": reason})
     ex.append_csv_row(closed_path(config), CLOSED_FIELDS, row)
+    ex.notify(
+        f"[{str(position.get('mode', '')).upper()}] Trade closed: {position.get('symbol')} {position.get('side')} "
+        f"- {reason}. P/L ${ex.safe_float(pnl):+.2f} (stake ${position.get('stake')})\nTrack: {position.get('track_name')}"
+    )
 
 
 async def manage_once(config: ex.DerivDirectConfig, trader: Any, profit_lock_r: float = 2.0) -> list[str]:

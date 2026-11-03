@@ -6,6 +6,7 @@ import csv
 import json
 import os
 import urllib.error
+import urllib.parse
 import urllib.request
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
@@ -493,6 +494,20 @@ def proposal_payload(plan: PlannedOrder, config: DerivDirectConfig, multiplier: 
     }
 
 
+def notify(text: str) -> bool:
+    """Telegram message to the owner. Never raises; returns whether it was sent."""
+    token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
+    chat_id = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
+    if not token or not chat_id:
+        return False
+    try:
+        data = urllib.parse.urlencode({"chat_id": chat_id, "text": text[:3900]}).encode()
+        urllib.request.urlopen(urllib.request.Request(f"https://api.telegram.org/bot{token}/sendMessage", data=data), timeout=20).read()
+        return True
+    except Exception:  # noqa: BLE001 - an alert problem must never stop trading logic
+        return False
+
+
 def open_positions_path(config: DerivDirectConfig) -> Path:
     return Path(config.journal_csv).with_name("deriv_direct_open_positions.json")
 
@@ -778,6 +793,11 @@ def main() -> int:
         limits = result.get("proposal_payload", {}).get("limit_order", {})
         if status == "bought":
             record_open_position(config, plan, result)
+            notify(
+                f"[{config.account_mode.upper()}] Trade opened: {selected.symbol} {selected.side} x{result.get('multiplier')}, "
+                f"stake ${plan.stake:g}, stop-loss ${limits.get('stop_loss')}, take-profit ${limits.get('take_profit')}\n"
+                f"Track: {selected.track_name}"
+            )
         write_journal_row(
             Path(config.journal_csv),
             {
