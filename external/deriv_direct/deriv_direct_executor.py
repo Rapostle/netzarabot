@@ -5,6 +5,8 @@ import asyncio
 import csv
 import json
 import os
+import urllib.error
+import urllib.request
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -16,7 +18,27 @@ import websockets
 DECISION_ORDER = {"paper_order", "live_order", "signal", "trade"}
 HARD_MIN_WIN_RATE = 0.65
 HARD_MIN_CLOSED_TRADES = 15
-MULTIPLIER_CANDIDATES = (10, 20, 30, 40, 50, 100, 200)
+# Deriv's new options API offers these multipliers on Boom/Crash (checked 2026-11-03).
+MULTIPLIER_CANDIDATES = (20, 40, 60, 80, 100)
+# Deriv adds an automatic stop-out at 90% of stake, so a stop loss must sit below it.
+MAX_STOP_LOSS_FRACTION_OF_STAKE = 0.8
+ENV_FILE = "/root/.deriv_env"
+VALID_ACCOUNT_MODES = ("demo", "real")
+
+
+def rest_base() -> str:
+    return os.environ.get("DERIV_REST_BASE") or "https://api.derivws.com/trading/v1/options"
+
+
+def load_env_file(path: str = ENV_FILE) -> None:
+    """Load KEY=VALUE lines (never overriding variables already set)."""
+    file = Path(path)
+    if not file.exists():
+        return
+    for line in file.read_text(encoding="utf-8").splitlines():
+        if "=" in line and not line.lstrip().startswith("#"):
+            key, value = line.split("=", 1)
+            os.environ.setdefault(key.strip(), value.strip())
 
 
 @dataclass(frozen=True)
@@ -56,6 +78,7 @@ class DerivDirectConfig:
     max_signal_age_minutes: float
     allowed_symbols: list[str]
     tracks: list[TrackConfig]
+    account_mode: str = "demo"
 
 
 @dataclass(frozen=True)
@@ -182,7 +205,7 @@ def load_config(path: Path, repo_root: Path) -> DerivDirectConfig:
     ] or default_tracks(repo_root)
 
     return DerivDirectConfig(
-        app_id=str(os.environ.get("DERIV_APP_ID") or raw.get("app_id") or "1089"),
+        app_id=str(os.environ.get("DERIV_APP_ID") or raw.get("app_id") or ""),
         enabled=bool(raw.get("enabled", False)),
         allow_real_trading=bool(raw.get("allow_real_trading", False)),
         arming_file=resolve_repo_path(repo_root, str(raw.get("arming_file", "live_candidate/config/ALLOW_REAL_LIVE_TRADING.txt"))),
@@ -198,6 +221,7 @@ def load_config(path: Path, repo_root: Path) -> DerivDirectConfig:
         max_signal_age_minutes=max(safe_float(raw.get("max_signal_age_minutes"), 30.0), 0.0),
         allowed_symbols=[str(item).strip() for item in raw.get("allowed_symbols", []) if str(item).strip()],
         tracks=tracks,
+        account_mode=str(raw.get("account_mode") or "demo").strip().lower(),
     )
 
 
@@ -398,6 +422,7 @@ def plan_order(signal: CandidateSignal, config: DerivDirectConfig) -> PlannedOrd
     ratio = risk_reward_ratio(signal)
     stake = min(config.stake, config.max_stake) if config.max_stake > 0 else config.stake
     stop_loss_amount = config.max_stake if config.max_stake > 0 else stake
+    stop_loss_amount = round(min(stop_loss_amount, stake * MAX_STOP_LOSS_FRACTION_OF_STAKE), 2)
     return PlannedOrder(
         signal=signal,
         contract_type=contract_type_for(signal),
@@ -416,7 +441,7 @@ def proposal_payload(plan: PlannedOrder, config: DerivDirectConfig, multiplier: 
         "basis": config.basis,
         "contract_type": plan.contract_type,
         "currency": config.currency,
-        "symbol": plan.signal.symbol,
+        "underlying_symbol": plan.signal.symbol,
         "multiplier": multiplier,
         "limit_order": {
             "stop_loss": plan.stop_loss_amount,
@@ -440,26 +465,70 @@ def daily_journal_totals(path: Path) -> tuple[int, float]:
 
 
 class DerivDirectTrader:
-    def __init__(self, config: DerivDirectConfig, token: str = "") -> None:
+    """Talks to Deriv's new options API: token -> one-time link -> WebSocket."""
+
+    def __init__(self, config: DerivDirectConfig, pat: str = "", app_id: str = "") -> None:
         self.config = config
-        self.token = token
+        self.pat = pat
+        self.app_id = app_id or config.app_id
         self.req_id = 0
 
     def next_req_id(self) -> int:
         self.req_id += 1
         return self.req_id
 
+    def _rest(self, method: str, path: str) -> dict[str, Any]:
+        request = urllib.request.Request(rest_base() + path, method=method)
+        request.add_header("Authorization", f"Bearer {self.pat}")
+        request.add_header("Deriv-App-ID", self.app_id)
+        request.add_header("Content-Type", "application/json")
+        request.add_header("User-Agent", "netzarabot/1.0")
+        try:
+            with urllib.request.urlopen(request, timeout=30) as response:
+                return json.loads(response.read().decode("utf-8") or "{}")
+        except urllib.error.HTTPError as exc:
+            text = exc.read().decode("utf-8", errors="replace").strip()
+            raise RuntimeError(f"Deriv REST {path.split('/otp')[0]} failed (HTTP {exc.code}): {text[:200]}") from None
+
+    def account_id(self) -> str:
+        if self.config.account_mode == "real":
+            ident = os.environ.get("DERIV_REAL_ACCOUNT_ID", "").strip()
+            if not ident:
+                raise RuntimeError("Real mode needs DERIV_REAL_ACCOUNT_ID to be set explicitly.")
+            return ident
+        ident = os.environ.get("DERIV_DEMO_ACCOUNT_ID", "").strip()
+        if ident:
+            return ident
+        listing = self._rest("GET", "/accounts")
+        data = listing.get("data", listing)
+        items = data if isinstance(data, list) else (data.get("accounts") if isinstance(data, dict) else None) or []
+        for item in items:
+            kind = str(item.get("account_type") or item.get("type") or "").lower()
+            ident = item.get("account_id") or item.get("id") or item.get("loginid")
+            if ident and (kind == "demo" or item.get("is_virtual") in (True, 1)):
+                return str(ident)
+        raise RuntimeError("Could not identify a demo account; set DERIV_DEMO_ACCOUNT_ID.")
+
+    def ws_url(self) -> str:
+        otp = self._rest("POST", f"/accounts/{self.account_id()}/otp")
+        url = str((otp.get("data") or {}).get("url", ""))
+        expected = "/ws/real" if self.config.account_mode == "real" else "/ws/demo"
+        if expected not in url:
+            # Never include the link in the message: it contains the one-time password.
+            raise RuntimeError(f"Refusing to connect: the one-time link is not the {self.config.account_mode} endpoint.")
+        return url
+
     async def call(self, ws: Any, payload: dict[str, Any]) -> dict[str, Any]:
         payload.setdefault("req_id", self.next_req_id())
         await ws.send(json.dumps(payload))
-        response = json.loads(await asyncio.wait_for(ws.recv(), timeout=30))
+        while True:
+            response = json.loads(await asyncio.wait_for(ws.recv(), timeout=30))
+            if response.get("req_id") == payload["req_id"]:
+                break
         if "error" in response:
             error = response["error"]
             raise RuntimeError(str(error.get("message") or error))
         return response
-
-    async def authorize(self, ws: Any) -> dict[str, Any]:
-        return await self.call(ws, {"authorize": self.token})
 
     async def balance(self, ws: Any) -> dict[str, Any]:
         return await self.call(ws, {"balance": 1})
@@ -477,83 +546,62 @@ class DerivDirectTrader:
         raise RuntimeError("No configured multiplier candidate was accepted by Deriv. " + " | ".join(errors))
 
     async def buy(self, ws: Any, proposal_id: str, stake: float, signal: CandidateSignal) -> dict[str, Any]:
-        return await self.call(
-            ws,
-            {
-                "buy": proposal_id,
-                "price": stake,
-                "passthrough": {
-                    "bot": "netzarabot",
-                    "track": signal.track_name,
-                    "signal_id": signal.signal_id,
-                    "symbol": signal.symbol,
-                    "side": signal.side,
-                },
-            },
-        )
+        # The signal is recorded in our own journal; the new API no longer takes passthrough.
+        return await self.call(ws, {"buy": proposal_id, "price": stake})
 
     async def execute(self, plan: PlannedOrder, dry_run: bool) -> dict[str, Any]:
         if plan.stake <= 0:
             raise RuntimeError("Stake is zero after applying limits.")
+        if not self.pat or not self.app_id:
+            raise RuntimeError("DERIV_PAT and DERIV_APP_ID are required.")
 
         _daily_orders, daily_stake = daily_journal_totals(Path(self.config.journal_csv))
         if self.config.max_daily_stake > 0 and daily_stake + plan.stake > self.config.max_daily_stake:
             raise RuntimeError("Configured daily stake limit would be exceeded.")
 
-        url = f"wss://ws.derivws.com/websockets/v3?app_id={self.config.app_id}"
+        url = await asyncio.to_thread(self.ws_url)
         async with websockets.connect(url, ping_interval=20, close_timeout=10) as ws:
-            auth: dict[str, Any] = {}
-            portfolio: dict[str, Any] = {}
-            if self.token:
-                auth = await self.authorize(ws)
-                portfolio = await self.portfolio(ws)
-                open_contracts = portfolio.get("portfolio", {}).get("contracts") or []
-                if self.config.max_open_contracts and len(open_contracts) >= self.config.max_open_contracts:
-                    raise RuntimeError("Max open contracts reached.")
+            portfolio = await self.portfolio(ws)
+            open_contracts = portfolio.get("portfolio", {}).get("contracts") or []
+            if self.config.max_open_contracts and len(open_contracts) >= self.config.max_open_contracts:
+                raise RuntimeError("Max open contracts reached.")
             multiplier, proposal = await self.proposal_with_smallest_multiplier(ws, plan)
             proposal_id = proposal.get("proposal", {}).get("id")
             if not proposal_id:
                 raise RuntimeError("Deriv did not return a proposal id.")
-            if dry_run:
-                balance = await self.balance(ws) if self.token else {}
-                return {
-                    "status": "dry_run_proposal_ok",
-                    "authorize": auth.get("authorize", {}),
-                    "portfolio": portfolio.get("portfolio", {}),
-                    "proposal": proposal.get("proposal", {}),
-                    "balance": balance.get("balance", {}),
-                    "stake": plan.stake,
-                    "multiplier": multiplier,
-                    "proposal_payload": proposal_payload(plan, self.config, multiplier),
-                }
-            if not self.token:
-                raise RuntimeError("DERIV_API_TOKEN is required for a real buy.")
-            bought = await self.buy(ws, proposal_id, plan.stake, plan.signal)
-            balance = await self.balance(ws)
-            return {
-                "status": "bought",
-                "authorize": auth.get("authorize", {}),
+            result = {
+                "account_mode": self.config.account_mode,
                 "portfolio": portfolio.get("portfolio", {}),
                 "proposal": proposal.get("proposal", {}),
-                "buy": bought.get("buy", {}),
-                "balance": balance.get("balance", {}),
                 "stake": plan.stake,
                 "multiplier": multiplier,
                 "proposal_payload": proposal_payload(plan, self.config, multiplier),
             }
+            if dry_run:
+                balance = await self.balance(ws)
+                return dict(result, status="dry_run_proposal_ok", balance=balance.get("balance", {}))
+            bought = await self.buy(ws, proposal_id, plan.stake, plan.signal)
+            balance = await self.balance(ws)
+            return dict(result, status="bought", buy=bought.get("buy", {}), balance=balance.get("balance", {}))
 
 
-def validate_live_arming(config: DerivDirectConfig, token: str, dry_run: bool) -> None:
+def validate_live_arming(config: DerivDirectConfig, pat: str, dry_run: bool) -> None:
     if not config.enabled:
         raise RuntimeError("Deriv-direct config enabled=false.")
-    if not Path(config.arming_file).exists():
-        raise RuntimeError(f"Arming file is missing: {config.arming_file}")
+    if config.account_mode not in VALID_ACCOUNT_MODES:
+        raise RuntimeError(f"Config account_mode must be one of {VALID_ACCOUNT_MODES}.")
     if dry_run:
         return
-    if not token:
-        raise RuntimeError("DERIV_API_TOKEN is not set.")
+    if not pat:
+        raise RuntimeError("DERIV_PAT is not set.")
+    if config.account_mode == "demo":
+        return  # demo money only; the real-money gates below do not apply
+    if not Path(config.arming_file).exists():
+        raise RuntimeError(f"Arming file is missing: {config.arming_file}")
     if not config.allow_real_trading:
         raise RuntimeError("Config allow_real_trading=false.")
+    if not os.environ.get("DERIV_REAL_ACCOUNT_ID", "").strip():
+        raise RuntimeError("Set DERIV_REAL_ACCOUNT_ID to name the real account explicitly.")
     if os.environ.get("ALLOW_REAL_DERIV_DIRECT") != "true":
         raise RuntimeError("Set ALLOW_REAL_DERIV_DIRECT=true to permit real Deriv-direct buys.")
     if os.environ.get("DERIV_DIRECT_CONSENT") != "I_UNDERSTAND_REAL_MONEY_TRADING":
@@ -564,7 +612,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Execute one Deriv-direct Multiplier order from the freshest qualified NetzaraBot signal.")
     parser.add_argument("--config", default="live_candidate/config/deriv_direct_live_config.json")
     parser.add_argument("--repo-root", default=".")
-    parser.add_argument("--dry-run", action="store_true", help="Request a real Deriv proposal, but do not buy.")
+    parser.add_argument("--dry-run", action="store_true", help="Request a real Deriv price quote, but do not buy.")
     parser.add_argument("--plan-only", action="store_true", help="Print track qualification, selected signal, and proposal payload without network.")
     return parser.parse_args()
 
@@ -605,9 +653,10 @@ def response_payload(status: str, config: DerivDirectConfig, qualifications: lis
 
 def main() -> int:
     args = parse_args()
+    load_env_file()
     repo_root = Path(args.repo_root).resolve()
     config = load_config(repo_root / args.config, repo_root)
-    token = os.environ.get("DERIV_API_TOKEN", "").strip()
+    token = (os.environ.get("DERIV_PAT") or os.environ.get("DERIV_API_TOKEN") or "").strip()
     try:
         if not args.plan_only:
             validate_live_arming(config, token, args.dry_run)
@@ -620,7 +669,7 @@ def main() -> int:
         if args.plan_only:
             print(json.dumps(response_payload("plan_only", config, qualifications, selected, plan), indent=2))
             return 0
-        trader = DerivDirectTrader(config, token)
+        trader = DerivDirectTrader(config, token, os.environ.get("DERIV_APP_ID", ""))
         result = asyncio.run(trader.execute(plan, dry_run=args.dry_run))
         proposal = result.get("proposal", {})
         buy = result.get("buy", {})
@@ -630,7 +679,7 @@ def main() -> int:
             Path(config.journal_csv),
             {
                 "timestamp": utc_now(),
-                "mode": "dry_run" if args.dry_run else "live",
+                "mode": "dry_run" if args.dry_run else config.account_mode,
                 "status": status,
                 "track_name": selected.track_name,
                 "symbol": selected.symbol,
@@ -657,7 +706,7 @@ def main() -> int:
             Path(config.journal_csv),
             {
                 "timestamp": utc_now(),
-                "mode": "dry_run" if args.dry_run else "live",
+                "mode": "dry_run" if args.dry_run else config.account_mode,
                 "status": "error",
                 "message": str(exc),
             },
