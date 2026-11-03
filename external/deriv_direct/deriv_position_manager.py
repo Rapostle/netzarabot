@@ -36,6 +36,7 @@ CLOSED_FIELDS = [
     "pnl", "exit_reason", "signal_id",
 ]
 TIMEFRAME_SECONDS = {"m": 60, "h": 3600, "d": 86400}
+MAX_SPOT_DRIFT = 0.25  # profit lock is ignored if the live price is more than 25% away from the entry
 
 
 def timeframe_seconds(label: str) -> int:
@@ -76,7 +77,9 @@ def exit_decision(position: dict[str, Any], contract: dict[str, Any], now: datet
     spot = ex.safe_float(contract.get("current_spot"))
     entry = ex.safe_float(position.get("entry"))
     risk = abs(entry - ex.safe_float(position.get("stop_loss")))
-    if profit_lock_r > 0 and spot > 0 and risk > 0:
+    # A price far from the entry means a stale signal or a different price scale: never act on it.
+    scale_ok = entry > 0 and spot > 0 and abs(spot - entry) / entry <= MAX_SPOT_DRIFT
+    if profit_lock_r > 0 and scale_ok and risk > 0:
         move = (spot - entry) if position.get("side") == "buy" else (entry - spot)
         if move / risk >= profit_lock_r:
             return f"profit lock {profit_lock_r:g}R"

@@ -223,6 +223,11 @@ class ManagerTests(unittest.TestCase):
         self.run_mgr()
         self.assertEqual(self.closed_rows()[0]["exit_reason"], "profit lock 2R")
 
+    def test_profit_lock_ignored_when_price_scale_does_not_match(self):
+        self.seed(); SEEN["contract"] = {"is_sold": 0, "current_spot": 315.0}   # entry 100: stale signal or other price scale
+        self.run_mgr()
+        self.assertEqual(len(self.left()), 1); self.assertEqual(self.closed_rows(), [])
+
     def test_sell_side_profit_lock_uses_downward_move(self):
         self.seed(side="sell", stop_loss=101.0, take_profit=98.0); SEEN["contract"] = {"is_sold": 0, "current_spot": 98.0}
         self.run_mgr()
