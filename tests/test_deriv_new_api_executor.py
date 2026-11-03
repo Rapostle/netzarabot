@@ -8,7 +8,7 @@ import websockets
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "external" / "deriv_direct"))
 import deriv_direct_executor as ex  # noqa: E402
 
-SEEN = {"rest": [], "ws": [], "otp_kind": "demo", "reject_mult": set(), "open": 0}
+SEEN = {"rest": [], "ws": [], "otp_kind": "demo", "reject_mult": set(), "open": 0, "contract": {}, "sell_fails": False}
 
 
 class Rest(BaseHTTPRequestHandler):
@@ -48,6 +48,10 @@ async def ws_handler(ws):
                 out = {"error": {"message": "multiplier not offered"}}
             else:
                 out = {"proposal": {"id": "P1", "ask_price": msg["amount"]}}
+        elif "proposal_open_contract" in msg:
+            out = {"proposal_open_contract": dict(SEEN["contract"], contract_id=msg["contract_id"])}
+        elif "sell" in msg:
+            out = {"error": {"message": "sell refused"}} if SEEN["sell_fails"] else {"sell": {"contract_id": msg["sell"], "sold_for": 0.98}}
         elif "buy" in msg:
             out = {"buy": {"contract_id": 99, "buy_price": msg["price"]}}
         else:
@@ -88,7 +92,7 @@ class Tests(unittest.TestCase):
             os.environ.pop(k, None)
 
     def setUp(self):
-        SEEN.update(rest=[], ws=[], otp_kind="demo", reject_mult=set(), open=0)
+        SEEN.update(rest=[], ws=[], otp_kind="demo", reject_mult=set(), open=0, contract={}, sell_fails=False)
         self.tmp = tempfile.mkdtemp()
 
     def run_exec(self, config, dry):
@@ -97,9 +101,20 @@ class Tests(unittest.TestCase):
 
     def test_plan_stoploss_below_stopout_and_field_name(self):
         c = cfg(self.tmp); plan = ex.plan_order(SIG, c)
-        self.assertEqual(plan.stop_loss_amount, 1.6)
         p = ex.proposal_payload(plan, c, 20)
         self.assertIn("underlying_symbol", p); self.assertNotIn("symbol", p)
+        self.assertEqual(p["limit_order"], {"stop_loss": 0.4, "take_profit": 0.8})   # 2 * 20 * 1% and 2 * 20 * 2%
+        self.assertEqual(ex.proposal_payload(plan, c, 40)["limit_order"]["stop_loss"], 0.8)
+
+    def test_stop_too_wide_is_refused_not_clamped(self):
+        wide = ex.CandidateSignal("t", "BOOM300N", "15m", "x", "buy", "buy", 0.8, "r", 100.0, 95.0, 110.0, 1, 1, "w")  # 5% stop x20 = 100% of stake
+        c = cfg(self.tmp); plan = ex.plan_order(wide, c)
+        with self.assertRaises(RuntimeError) as cm:
+            ex.proposal_payload(plan, c, 20)
+        self.assertIn("too wide", str(cm.exception))
+        with self.assertRaises(RuntimeError):
+            asyncio.run(ex.DerivDirectTrader(c, "pat_test", "APP1").execute(plan, True))
+        self.assertFalse(any("buy" in m for m in SEEN["ws"]))
 
     def test_demo_dry_run_never_buys_and_picks_demo_account(self):
         r = self.run_exec(cfg(self.tmp), True)
@@ -154,6 +169,91 @@ class Tests(unittest.TestCase):
             ex.validate_live_arming(cfg(self.tmp, "real", allow_real_trading=True), "pat_test", False)  # no account id/env
         with self.assertRaises(RuntimeError):
             ex.validate_live_arming(cfg(self.tmp, "bogus"), "pat_test", False)
+
+
+class ManagerTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        Tests.setUpClass.__func__(Tests)
+        import deriv_position_manager as mgr
+        cls.mgr = mgr
+
+    def setUp(self):
+        SEEN.update(rest=[], ws=[], otp_kind="demo", reject_mult=set(), open=0, contract={}, sell_fails=False)
+        self.tmp = tempfile.mkdtemp()
+        self.c = cfg(self.tmp)
+        self.trader = ex.DerivDirectTrader(self.c, "pat_test", "APP1")
+
+    def seed(self, opened_minutes_ago=1, **kw):
+        from datetime import datetime, timedelta, timezone
+        pos = {"contract_id": 7, "opened_at": (datetime.now(timezone.utc) - timedelta(minutes=opened_minutes_ago)).isoformat(),
+               "mode": "demo", "track_name": "t", "signal_id": "s", "symbol": "BOOM300N", "timeframe": "15m", "side": "buy",
+               "entry": 100.0, "stop_loss": 99.0, "take_profit": 102.0, "stake": 1.0, "multiplier": 20,
+               "stop_loss_amount": 0.2, "take_profit_amount": 0.4, "buy_price": 1.0, "max_bars": 12}
+        pos.update(kw)
+        ex.save_open_positions(ex.open_positions_path(self.c), [pos])
+
+    def run_mgr(self):
+        return asyncio.run(self.mgr.manage_once(self.c, self.trader))
+
+    def closed_rows(self):
+        return ex.read_rows(self.mgr.closed_path(self.c))
+
+    def left(self):
+        return ex.load_open_positions(ex.open_positions_path(self.c))
+
+    def test_nothing_open(self):
+        self.assertEqual(self.run_mgr(), ["no open positions"])
+
+    def test_keeps_young_position_with_no_trigger(self):
+        self.seed(); SEEN["contract"] = {"is_sold": 0, "current_spot": 100.2}
+        self.run_mgr()
+        self.assertEqual(len(self.left()), 1); self.assertEqual(self.closed_rows(), [])
+        self.assertFalse(any("sell" in m for m in SEEN["ws"]))
+
+    def test_time_exit_after_12_candles(self):
+        self.seed(opened_minutes_ago=181); SEEN["contract"] = {"is_sold": 0, "current_spot": 100.2}   # 12 x 15m = 180m
+        self.run_mgr()
+        rows = self.closed_rows()
+        self.assertEqual(len(rows), 1); self.assertEqual(rows[0]["exit_reason"], "time exit"); self.assertEqual(self.left(), [])
+        self.assertAlmostEqual(float(rows[0]["pnl"]), -0.02, places=6)
+
+    def test_profit_lock_at_2r(self):
+        self.seed(); SEEN["contract"] = {"is_sold": 0, "current_spot": 102.0}   # 2R = entry + 2 * 1.0
+        self.run_mgr()
+        self.assertEqual(self.closed_rows()[0]["exit_reason"], "profit lock 2R")
+
+    def test_sell_side_profit_lock_uses_downward_move(self):
+        self.seed(side="sell", stop_loss=101.0, take_profit=98.0); SEEN["contract"] = {"is_sold": 0, "current_spot": 98.0}
+        self.run_mgr()
+        self.assertEqual(self.closed_rows()[0]["exit_reason"], "profit lock 2R")
+
+    def test_deriv_closed_it_on_stop_loss(self):
+        self.seed(); SEEN["contract"] = {"is_sold": 1, "profit": -0.2, "sell_price": 0.8}
+        self.run_mgr()
+        rows = self.closed_rows()
+        self.assertEqual(rows[0]["exit_reason"], "deriv stop loss"); self.assertEqual(self.left(), [])
+        self.assertFalse(any("sell" in m for m in SEEN["ws"]))
+
+    def test_failed_sell_keeps_position_for_retry(self):
+        self.seed(opened_minutes_ago=200); SEEN["contract"] = {"is_sold": 0, "current_spot": 100.0}; SEEN["sell_fails"] = True
+        log = self.run_mgr()
+        self.assertEqual(len(self.left()), 1); self.assertEqual(self.closed_rows(), [])
+        self.assertTrue(any("will retry" in line for line in log))
+
+    def test_manager_needs_no_arming_in_real_mode_but_demo_link_rule_still_holds(self):
+        SEEN["otp_kind"] = "real"; self.seed()
+        with self.assertRaises(RuntimeError):
+            self.run_mgr()
+        self.assertEqual(len(self.left()), 1)
+
+    def test_executor_records_the_position_it_opens(self):
+        plan = ex.plan_order(SIG, self.c)
+        result = asyncio.run(self.trader.execute(plan, False))
+        ex.record_open_position(self.c, plan, result)
+        saved = self.left()
+        self.assertEqual(saved[0]["contract_id"], 99); self.assertEqual(saved[0]["max_bars"], 12)
+        self.assertEqual(saved[0]["stop_loss_amount"], 0.4)   # test config stake is $2: 2 * 20 * 1%
 
 
 if __name__ == "__main__":

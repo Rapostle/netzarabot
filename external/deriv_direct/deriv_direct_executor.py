@@ -22,6 +22,8 @@ HARD_MIN_CLOSED_TRADES = 15
 MULTIPLIER_CANDIDATES = (20, 40, 60, 80, 100)
 # Deriv adds an automatic stop-out at 90% of stake, so a stop loss must sit below it.
 MAX_STOP_LOSS_FRACTION_OF_STAKE = 0.8
+# Paper trades are closed after this many candles if neither level was reached.
+MAX_HOLD_BARS = 12
 ENV_FILE = "/root/.deriv_env"
 VALID_ACCOUNT_MODES = ("demo", "real")
 
@@ -418,23 +420,45 @@ def risk_reward_ratio(signal: CandidateSignal) -> float:
     return reward_distance / risk_distance
 
 
+def limit_amounts(signal: CandidateSignal, stake: float, multiplier: int) -> tuple[float, float]:
+    """Dollar stop-loss / take-profit that reproduce the signal's price levels.
+
+    A multiplier contract gains or loses stake * multiplier * (price change / entry price).
+    The stop must stay under the stop-out Deriv adds at 90% of stake.
+    """
+    if signal.entry <= 0:
+        raise RuntimeError("Signal has no valid entry price.")
+    stop = round(stake * multiplier * abs(signal.entry - signal.stop_loss) / signal.entry, 2)
+    take = round(stake * multiplier * abs(signal.take_profit - signal.entry) / signal.entry, 2)
+    ceiling = round(stake * MAX_STOP_LOSS_FRACTION_OF_STAKE, 2)
+    if stop > ceiling:
+        raise RuntimeError(f"stop too wide for x{multiplier}: would risk ${stop} on a ${stake} stake (limit ${ceiling})")
+    if stop <= 0 or take <= 0:
+        raise RuntimeError(f"stop or target too close to entry for x{multiplier}")
+    return stop, take
+
+
 def plan_order(signal: CandidateSignal, config: DerivDirectConfig) -> PlannedOrder:
     ratio = risk_reward_ratio(signal)
     stake = min(config.stake, config.max_stake) if config.max_stake > 0 else config.stake
-    stop_loss_amount = config.max_stake if config.max_stake > 0 else stake
-    stop_loss_amount = round(min(stop_loss_amount, stake * MAX_STOP_LOSS_FRACTION_OF_STAKE), 2)
+    # Indicative dollar limits at the lowest multiplier; the real ones are set per multiplier.
+    try:
+        stop_loss_amount, take_profit_amount = limit_amounts(signal, stake, MULTIPLIER_CANDIDATES[0])
+    except RuntimeError:
+        stop_loss_amount, take_profit_amount = 0.0, 0.0
     return PlannedOrder(
         signal=signal,
         contract_type=contract_type_for(signal),
         stake=stake,
         stop_loss_amount=stop_loss_amount,
-        take_profit_amount=round(stop_loss_amount * ratio, 2),
+        take_profit_amount=take_profit_amount,
         risk_reward_ratio=ratio,
         multiplier_candidates=MULTIPLIER_CANDIDATES,
     )
 
 
 def proposal_payload(plan: PlannedOrder, config: DerivDirectConfig, multiplier: int) -> dict[str, Any]:
+    stop_loss, take_profit = limit_amounts(plan.signal, plan.stake, multiplier)
     return {
         "proposal": 1,
         "amount": plan.stake,
@@ -444,10 +468,60 @@ def proposal_payload(plan: PlannedOrder, config: DerivDirectConfig, multiplier: 
         "underlying_symbol": plan.signal.symbol,
         "multiplier": multiplier,
         "limit_order": {
-            "stop_loss": plan.stop_loss_amount,
-            "take_profit": plan.take_profit_amount,
+            "stop_loss": stop_loss,
+            "take_profit": take_profit,
         },
     }
+
+
+def open_positions_path(config: DerivDirectConfig) -> Path:
+    return Path(config.journal_csv).with_name("deriv_direct_open_positions.json")
+
+
+def load_open_positions(path: Path) -> list[dict[str, Any]]:
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        return data if isinstance(data, list) else []
+    except (OSError, ValueError):
+        return []
+
+
+def save_open_positions(path: Path, positions: list[dict[str, Any]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temp = path.with_suffix(".tmp")
+    temp.write_text(json.dumps(positions, indent=2), encoding="utf-8")
+    temp.replace(path)
+
+
+def record_open_position(config: DerivDirectConfig, plan: PlannedOrder, result: dict[str, Any]) -> None:
+    buy = result.get("buy", {})
+    if not buy.get("contract_id"):
+        return
+    signal = plan.signal
+    limits = result.get("proposal_payload", {}).get("limit_order", {})
+    positions = load_open_positions(open_positions_path(config))
+    positions.append(
+        {
+            "contract_id": buy["contract_id"],
+            "opened_at": utc_now(),
+            "mode": config.account_mode,
+            "track_name": signal.track_name,
+            "signal_id": signal.signal_id,
+            "symbol": signal.symbol,
+            "timeframe": signal.timeframe,
+            "side": signal.side,
+            "entry": signal.entry,
+            "stop_loss": signal.stop_loss,
+            "take_profit": signal.take_profit,
+            "stake": plan.stake,
+            "multiplier": result.get("multiplier"),
+            "stop_loss_amount": limits.get("stop_loss"),
+            "take_profit_amount": limits.get("take_profit"),
+            "buy_price": buy.get("buy_price"),
+            "max_bars": MAX_HOLD_BARS,
+        }
+    )
+    save_open_positions(open_positions_path(config), positions)
 
 
 def daily_journal_totals(path: Path) -> tuple[int, float]:
@@ -617,6 +691,13 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def example_payload(plan: PlannedOrder, config: DerivDirectConfig) -> dict[str, Any]:
+    try:
+        return proposal_payload(plan, config, plan.multiplier_candidates[0])
+    except RuntimeError as exc:
+        return {"not_tradeable_at_lowest_multiplier": str(exc)}
+
+
 def response_payload(status: str, config: DerivDirectConfig, qualifications: list[TrackQualification], selected: CandidateSignal | None, plan: PlannedOrder | None, result: dict[str, Any] | None = None) -> dict[str, Any]:
     payload: dict[str, Any] = {
         "ok": True,
@@ -644,7 +725,7 @@ def response_payload(status: str, config: DerivDirectConfig, qualifications: lis
             "take_profit_amount": plan.take_profit_amount,
             "risk_reward_ratio": plan.risk_reward_ratio,
             "multiplier_candidates": list(plan.multiplier_candidates),
-            "example_proposal_payload": proposal_payload(plan, config, plan.multiplier_candidates[0]),
+            "example_proposal_payload": example_payload(plan, config),
         }
     if result is not None:
         payload["result"] = result
@@ -675,6 +756,9 @@ def main() -> int:
         buy = result.get("buy", {})
         balance = result.get("balance", {})
         status = "dry_run_proposal_ok" if args.dry_run else "bought"
+        limits = result.get("proposal_payload", {}).get("limit_order", {})
+        if status == "bought":
+            record_open_position(config, plan, result)
         write_journal_row(
             Path(config.journal_csv),
             {
@@ -687,8 +771,8 @@ def main() -> int:
                 "contract_type": plan.contract_type,
                 "stake": plan.stake,
                 "multiplier": result.get("multiplier", ""),
-                "stop_loss_amount": plan.stop_loss_amount,
-                "take_profit_amount": plan.take_profit_amount,
+                "stop_loss_amount": limits.get("stop_loss", ""),
+                "take_profit_amount": limits.get("take_profit", ""),
                 "risk_reward_ratio": round(plan.risk_reward_ratio, 6),
                 "currency": config.currency,
                 "signal_id": selected.signal_id,
