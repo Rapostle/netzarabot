@@ -8,6 +8,7 @@ try:
 except ImportError:
     import deriv_direct_executor as ex
 import deriv_position_manager as mgr
+# The third argument of manage_once is the profit lock: 0 turns it off, so only the time rule can fire.
 
 ex.load_env_file()
 root = Path(__file__).resolve().parents[2]
@@ -25,11 +26,11 @@ positions[-1]["max_bars"] = 1          # 1 candle of 1m = 60 seconds, so the tim
 ex.save_open_positions(ex.open_positions_path(config), positions)
 
 print("manager check right away (should keep it open):")
-print("  ", asyncio.run(mgr.manage_once(config, trader, 0)  # 0 = profit lock off, so only the time rule can fire))
+print("  ", asyncio.run(mgr.manage_once(config, trader, 0)))
 print("waiting 65 seconds for the time exit...")
 time.sleep(65)
 print("manager check after 65s (should close it):")
-print("  ", asyncio.run(mgr.manage_once(config, trader, 0)  # 0 = profit lock off, so only the time rule can fire))
+print("  ", asyncio.run(mgr.manage_once(config, trader, 0)))
 print("closed-trades file:")
 for row in ex.read_rows(mgr.closed_path(config))[-1:]:
     print("  ", {k: row[k] for k in ("contract_id", "exit_reason", "buy_price", "sell_price", "pnl")})
