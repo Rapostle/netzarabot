@@ -2,11 +2,18 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 from dataclasses import dataclass
 from pathlib import Path
 
 import pandas as pd
 import websockets
+
+# Deriv retired the legacy endpoint (wss://ws.derivws.com/websockets/v3?app_id=...,
+# now answers HTTP 520). Public market data (candles) comes from the new public
+# options endpoint, which needs no app id and no login.
+PUBLIC_WS_URL = "wss://api.derivws.com/trading/v1/options/ws/public"
+FALLBACK_COUNT = 1000
 
 
 @dataclass(frozen=True)
@@ -15,28 +22,32 @@ class DerivDownloadRequest:
     granularity: int
     output: str | Path
     count: int = 5000
-    app_id: int | str = 1089
+    app_id: int | str = 1089  # kept for compatibility; the public endpoint ignores it
 
 
 class DerivDataDownloader:
     def __init__(self, app_id: int | str = 1089) -> None:
         self.app_id = str(app_id)
 
-    async def _download_async(self, request: DerivDownloadRequest) -> pd.DataFrame:
-        app_id = str(request.app_id or self.app_id)
-        url = f"wss://ws.derivws.com/websockets/v3?app_id={app_id}"
+    async def _fetch_candles(self, url: str, symbol: str, granularity: int, count: int) -> dict:
         payload = {
-            "ticks_history": request.symbol,
-            "adjust_start_time": 1,
-            "count": int(request.count),
+            "ticks_history": symbol,
+            "count": int(count),
             "end": "latest",
-            "granularity": int(request.granularity),
+            "granularity": int(granularity),
             "style": "candles",
         }
         async with websockets.connect(url, ping_interval=20, close_timeout=10) as ws:
             await ws.send(json.dumps(payload))
             message = await asyncio.wait_for(ws.recv(), timeout=45)
-        response = json.loads(message)
+        return json.loads(message)
+
+    async def _download_async(self, request: DerivDownloadRequest) -> pd.DataFrame:
+        url = os.environ.get("DERIV_WS_URL") or PUBLIC_WS_URL
+        response = await self._fetch_candles(url, request.symbol, request.granularity, request.count)
+        if "error" in response and int(request.count) > FALLBACK_COUNT:
+            # The new API may cap how many candles one request can return.
+            response = await self._fetch_candles(url, request.symbol, request.granularity, FALLBACK_COUNT)
         if "error" in response:
             error = response["error"]
             raise RuntimeError(f"Deriv download failed for {request.symbol}: {error.get('message', error)}")
