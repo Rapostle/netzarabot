@@ -5,6 +5,7 @@ import asyncio
 import csv
 import json
 import os
+import re
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -25,6 +26,12 @@ MULTIPLIER_CANDIDATES = (20, 40, 60, 80, 100)
 MAX_STOP_LOSS_FRACTION_OF_STAKE = 0.8
 # Paper trades are closed after this many candles if neither level was reached.
 MAX_HOLD_BARS = 12
+# Demo gate defaults (money-free): a rule with fewer closed trades than this is on probation and may trade.
+DEFAULT_PROBATION_TRADES = 5
+# A whole track is switched off in demo only if it has this many closed trades and a win rate below the floor.
+DEFAULT_TRACK_FLOOR_WIN_RATE = 0.40
+DEFAULT_TRACK_FLOOR_MIN_TRADES = 8
+GATE_MODES = ("per_rule", "per_track")
 ENV_FILE = "/root/.deriv_env"
 VALID_ACCOUNT_MODES = ("demo", "real")
 
@@ -82,6 +89,23 @@ class DerivDirectConfig:
     allowed_symbols: list[str]
     tracks: list[TrackConfig]
     account_mode: str = "demo"
+    gate_mode: str = "per_rule"
+    rule_qualification_csv: str = ""
+    probation_trades: int = DEFAULT_PROBATION_TRADES
+    track_floor_win_rate: float = DEFAULT_TRACK_FLOOR_WIN_RATE
+    track_floor_min_trades: int = DEFAULT_TRACK_FLOOR_MIN_TRADES
+
+
+@dataclass(frozen=True)
+class RuleQualification:
+    track_name: str
+    rule: str
+    closed_trades: int
+    wins: int
+    win_rate: float
+    allowed: bool
+    status: str
+    reason: str
 
 
 @dataclass(frozen=True)
@@ -207,6 +231,10 @@ def load_config(path: Path, repo_root: Path) -> DerivDirectConfig:
         if item.get("decisions_csv") and item.get("closed_trades_csv")
     ] or default_tracks(repo_root)
 
+    gate_mode = str(raw.get("gate_mode") or "per_rule").strip().lower()
+    if gate_mode not in GATE_MODES:
+        raise ValueError(f"gate_mode must be one of {GATE_MODES}, got {gate_mode!r}")
+
     return DerivDirectConfig(
         app_id=str(os.environ.get("DERIV_APP_ID") or raw.get("app_id") or ""),
         enabled=bool(raw.get("enabled", False)),
@@ -225,6 +253,11 @@ def load_config(path: Path, repo_root: Path) -> DerivDirectConfig:
         allowed_symbols=[str(item).strip() for item in raw.get("allowed_symbols", []) if str(item).strip()],
         tracks=tracks,
         account_mode=str(raw.get("account_mode") or "demo").strip().lower(),
+        gate_mode=gate_mode,
+        rule_qualification_csv=resolve_repo_path(repo_root, str(raw.get("rule_qualification_csv", "outputs/deriv_direct_rule_qualification.csv"))),
+        probation_trades=max(safe_int(raw.get("probation_trades"), DEFAULT_PROBATION_TRADES), 0),
+        track_floor_win_rate=min(max(safe_float(raw.get("track_floor_win_rate"), DEFAULT_TRACK_FLOOR_WIN_RATE), 0.0), 1.0),
+        track_floor_min_trades=max(safe_int(raw.get("track_floor_min_trades"), DEFAULT_TRACK_FLOOR_MIN_TRADES), 1),
     )
 
 
@@ -363,20 +396,21 @@ def signal_from_row(row: dict[str, str], track_name: str, signal_time: datetime)
     )
 
 
-def latest_track_signal(track: TrackConfig, config: DerivDirectConfig) -> tuple[datetime, CandidateSignal] | None:
-    rows = read_rows(Path(track.decisions_csv))
-    now = datetime.now(timezone.utc)
-    candidates: list[tuple[datetime, CandidateSignal]] = []
-    for row in rows:
+def scan_track_signals(
+    track: TrackConfig, config: DerivDirectConfig, now: datetime
+) -> tuple[list[tuple[datetime, CandidateSignal]], list[tuple[CandidateSignal, str]]]:
+    """Return (eligible, skipped) for the fresh actionable rows of one track.
+
+    Skipped signals carry the reason, so a signal the executor passes on is never silent.
+    Rows that are not actionable (no trade, hold) or already too old are history, not skips.
+    """
+    eligible: list[tuple[datetime, CandidateSignal]] = []
+    skipped: list[tuple[CandidateSignal, str]] = []
+    for row in read_rows(Path(track.decisions_csv)):
         decision = (row.get("decision") or "").strip()
         side = (row.get("side") or "").strip().lower()
         symbol = (row.get("symbol") or "").strip()
         if decision not in DECISION_ORDER or side not in {"buy", "sell"}:
-            continue
-        if config.allowed_symbols and symbol not in config.allowed_symbols:
-            continue
-        confidence = safe_float(row.get("confidence"))
-        if confidence < config.min_confidence:
             continue
         signal_time = parse_time(row.get("timestamp") or "")
         if signal_time is None:
@@ -385,14 +419,71 @@ def latest_track_signal(track: TrackConfig, config: DerivDirectConfig) -> tuple[
         if config.max_signal_age_minutes > 0 and age_minutes > config.max_signal_age_minutes:
             continue
         signal = signal_from_row(row, track.name, signal_time)
-        if signal.entry <= 0 or signal.stop_loss <= 0 or signal.take_profit <= 0:
+        if config.allowed_symbols and symbol not in config.allowed_symbols:
+            skipped.append((signal, f"symbol {symbol} not in allowed_symbols"))
             continue
-        if abs(signal.entry - signal.stop_loss) <= 0 or abs(signal.take_profit - signal.entry) <= 0:
+        if signal.confidence < config.min_confidence:
+            skipped.append((signal, f"confidence {signal.confidence:.4f} < min_confidence {config.min_confidence:.2f}"))
             continue
-        candidates.append((signal_time, signal))
-    if not candidates:
+        if signal.entry <= 0 or signal.stop_loss <= 0 or signal.take_profit <= 0 or abs(signal.entry - signal.stop_loss) <= 0 or abs(signal.take_profit - signal.entry) <= 0:
+            skipped.append((signal, "invalid entry/stop-loss/take-profit levels"))
+            continue
+        eligible.append((signal_time, signal))
+    return eligible, skipped
+
+
+def latest_track_signal(track: TrackConfig, config: DerivDirectConfig) -> tuple[datetime, CandidateSignal] | None:
+    eligible, _skipped = scan_track_signals(track, config, datetime.now(timezone.utc))
+    if not eligible:
         return None
-    return sorted(candidates, key=lambda item: item[0], reverse=True)[0]
+    return sorted(eligible, key=lambda item: item[0], reverse=True)[0]
+
+
+def rule_id_from_reason(reason: str) -> str:
+    """Pull the rule id (for example PAIR017) out of a paper reason text."""
+    text = reason or ""
+    for pattern in (r"\brule\s+([A-Za-z0-9_\-]+)", r"(PAIR\d+)"):
+        match = re.search(pattern, text)
+        if match:
+            return match.group(1)
+    return "unknown"
+
+
+def rule_stats(track: TrackConfig) -> dict[str, tuple[int, int]]:
+    """Closed paper trades and wins for each rule of one track."""
+    stats: dict[str, list[int]] = {}
+    for row in read_rows(Path(track.closed_trades_csv)):
+        if (row.get("status") or "").strip().lower() != "closed":
+            continue
+        entry = stats.setdefault(rule_id_from_reason(row.get("reason", "")), [0, 0])
+        entry[0] += 1
+        if safe_float(row.get("paper_pnl")) > 0:
+            entry[1] += 1
+    return {rule: (counts[0], counts[1]) for rule, counts in stats.items()}
+
+
+def rule_gate(config: DerivDirectConfig, track_q: TrackQualification, closed: int, wins: int) -> tuple[bool, str, str]:
+    """Decide whether one rule may trade. Returns (allowed, status, reason).
+
+    Real mode keeps the hard evidence bar. Demo mode uses probation so unproven rules can
+    gather evidence with $1 stakes, but a rule or track that has proven bad stays blocked.
+    """
+    win_rate = wins / closed if closed else 0.0
+    if config.account_mode == "real":
+        if closed < HARD_MIN_CLOSED_TRADES:
+            return False, "blocked", f"rule closed_trades {closed} < {HARD_MIN_CLOSED_TRADES}"
+        if win_rate < HARD_MIN_WIN_RATE:
+            return False, "blocked", f"rule win_rate {win_rate:.2%} < {HARD_MIN_WIN_RATE:.2%}"
+        return True, "proven", f"{wins}/{closed} = {win_rate:.0%}"
+    if track_q.closed_trades >= config.track_floor_min_trades and track_q.win_rate < config.track_floor_win_rate:
+        return False, "blocked", (
+            f"track win_rate {track_q.win_rate:.2%} < floor {config.track_floor_win_rate:.0%} over {track_q.closed_trades} trades"
+        )
+    if closed < config.probation_trades:
+        return True, "probation", f"probation: {closed} < {config.probation_trades} closed trades, collecting demo evidence"
+    if win_rate >= HARD_MIN_WIN_RATE:
+        return True, "proven", f"{wins}/{closed} = {win_rate:.0%}"
+    return False, "blocked", f"rule win_rate {win_rate:.2%} < {HARD_MIN_WIN_RATE:.2%} over {closed} trades"
 
 
 def signal_key(signal: CandidateSignal) -> str:
@@ -413,19 +504,108 @@ def traded_keys(config: DerivDirectConfig) -> set[str]:
     return keys
 
 
-def select_signal(config: DerivDirectConfig) -> tuple[CandidateSignal | None, list[TrackQualification]]:
+def select_signal_detailed(
+    config: DerivDirectConfig,
+) -> tuple[CandidateSignal | None, list[TrackQualification], list[tuple[CandidateSignal, str]], list[RuleQualification]]:
     qualifications = [qualify_track(track) for track in config.tracks]
-    track_by_name = {track.name: track for track in config.tracks}
-    candidates: list[tuple[datetime, CandidateSignal]] = []
+    now = datetime.now(timezone.utc)
     done = traded_keys(config)
-    for qualification in qualifications:
-        if not qualification.qualified:
+    candidates: list[tuple[datetime, CandidateSignal]] = []
+    skips: list[tuple[CandidateSignal, str]] = []
+    rule_rows: list[RuleQualification] = []
+    for track, qualification in zip(config.tracks, qualifications):
+        eligible, track_skips = scan_track_signals(track, config, now)
+        skips.extend(track_skips)
+        passing: list[tuple[datetime, CandidateSignal]] = []
+        if config.gate_mode == "per_track":
+            if qualification.qualified:
+                passing = eligible
+            else:
+                skips.extend((signal, f"track not qualified: {qualification.reason}") for _time, signal in eligible)
+        else:
+            stats = rule_stats(track)
+            for signal_time, signal in eligible:
+                rule = rule_id_from_reason(signal.reason)
+                closed, wins = stats.get(rule, (0, 0))
+                allowed, status, reason = rule_gate(config, qualification, closed, wins)
+                rule_rows.append(
+                    RuleQualification(track.name, rule, closed, wins, wins / closed if closed else 0.0, allowed, status, reason)
+                )
+                if allowed:
+                    passing.append((signal_time, signal))
+                else:
+                    skips.append((signal, f"rule gate {rule}: {reason}"))
+        if not passing:
             continue
-        candidate = latest_track_signal(track_by_name[qualification.name], config)
-        if candidate is not None and not ({candidate[1].signal_id, signal_key(candidate[1])} & done):
-            candidates.append(candidate)
+        newest = sorted(passing, key=lambda item: item[0], reverse=True)[0]
+        if {newest[1].signal_id, signal_key(newest[1])} & done:
+            continue
+        candidates.append(newest)
     selected = sorted(candidates, key=lambda item: item[0], reverse=True)[0][1] if candidates else None
+    return selected, qualifications, skips, rule_rows
+
+
+def select_signal(config: DerivDirectConfig) -> tuple[CandidateSignal | None, list[TrackQualification]]:
+    selected, qualifications, _skips, _rules = select_signal_detailed(config)
     return selected, qualifications
+
+
+def log_skips(config: DerivDirectConfig, skips: list[tuple[CandidateSignal, str]], selected: CandidateSignal | None) -> int:
+    """Write each skipped signal to the journal once (same signal and reason is never repeated)."""
+    seen = {
+        (row.get("signal_id", ""), row.get("message", ""))
+        for row in read_rows(Path(config.journal_csv))
+        if row.get("status") == "skipped"
+    }
+    written = 0
+    for signal, reason in skips:
+        message = f"skipped: {reason}"
+        if (signal.signal_id, message) in seen:
+            continue
+        seen.add((signal.signal_id, message))
+        write_journal_row(
+            Path(config.journal_csv),
+            {
+                "timestamp": utc_now(),
+                "mode": config.account_mode,
+                "status": "skipped",
+                "track_name": signal.track_name,
+                "symbol": signal.symbol,
+                "side": signal.side,
+                "currency": config.currency,
+                "signal_id": signal.signal_id,
+                "message": message,
+            },
+        )
+        written += 1
+    return written
+
+
+def write_rule_rows(config: DerivDirectConfig, rows: list[RuleQualification]) -> None:
+    if not rows:
+        return
+    path = Path(config.rule_qualification_csv or Path(config.qualification_csv).with_name("deriv_direct_rule_qualification.csv"))
+    run_timestamp = utc_now()
+    seen: set[tuple[str, str]] = set()
+    for row in rows:
+        if (row.track_name, row.rule) in seen:
+            continue
+        seen.add((row.track_name, row.rule))
+        append_csv_row(
+            path,
+            ["timestamp", "track_name", "rule", "closed_trades", "wins", "win_rate", "allowed", "status", "reason"],
+            {
+                "timestamp": run_timestamp,
+                "track_name": row.track_name,
+                "rule": row.rule,
+                "closed_trades": row.closed_trades,
+                "wins": row.wins,
+                "win_rate": round(row.win_rate, 6),
+                "allowed": row.allowed,
+                "status": row.status,
+                "reason": row.reason,
+            },
+        )
 
 
 def contract_type_for(signal: CandidateSignal) -> str:
@@ -740,6 +920,11 @@ def response_payload(status: str, config: DerivDirectConfig, qualifications: lis
             "min_win_rate": HARD_MIN_WIN_RATE,
             "min_closed_trades": HARD_MIN_CLOSED_TRADES,
         },
+        "gate": {
+            "mode": config.gate_mode,
+            "probation_trades": config.probation_trades,
+            "min_confidence": config.min_confidence,
+        },
         "stake_limits": {
             "stake": config.stake,
             "max_stake": config.max_stake,
@@ -775,8 +960,11 @@ def main() -> int:
     try:
         if not args.plan_only:
             validate_live_arming(config, token, args.dry_run)
-        selected, qualifications = select_signal(config)
+        selected, qualifications, skips, rule_rows = select_signal_detailed(config)
         write_qualification_rows(Path(config.qualification_csv), qualifications, selected)
+        write_rule_rows(config, rule_rows)
+        if not args.plan_only:
+            log_skips(config, skips, selected)
         if selected is None:
             print(json.dumps(response_payload("no_fresh_qualified_signal", config, qualifications, None, None), indent=2))
             return 0
