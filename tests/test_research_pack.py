@@ -217,3 +217,48 @@ class EvaluateExistingTests(unittest.TestCase):
         self.assertGreater(r1["trades"], 50)
         r2 = table[(table.rule_id == "R2") & (table.period == "all")].iloc[0]
         self.assertEqual(r2["trades"], 0)  # unknown feature never matches
+
+
+def session_effect(n=8000, seed=2):
+    """Noise plus a real time-of-day effect: the 14:00 UTC hour drifts up."""
+    df = noise(n, seed)
+    r = np.log(df["close"] / df["close"].shift(1).fillna(2000.0)).to_numpy()
+    hours = df["timestamp"].dt.hour.to_numpy()
+    r = r + np.where(hours == 14, 0.0035, 0.0)
+    close = 2000 * np.exp(np.cumsum(r))
+    prev = np.r_[2000, close[:-1]]
+    df["open"], df["close"] = prev, close
+    df["high"] = np.maximum(prev, close) * 1.001
+    df["low"] = np.minimum(prev, close) * 0.999
+    return df
+
+
+class TimeFeatureTests(unittest.TestCase):
+    def test_session_rule_is_found_only_when_time_features_on(self):
+        df = session_effect()
+        off, _ = wf.run_protocol(df, wf.SearchConfig())
+        on, _ = wf.run_protocol(df, wf.SearchConfig(time_features=True))
+        on_pass = on[on["final_pass"]] if len(on) else on
+        self.assertTrue(any("europe_us_overlap" in c for c in on_pass["condition"]))
+        if len(off):
+            self.assertFalse(any("europe_us_overlap" in c for c in off["condition"]))
+
+    def test_cli_writes_tagged_outputs(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            data = Path(tmp) / "h"
+            data.mkdir()
+            df = noise(3500)
+            df["timestamp"] = df["timestamp"].astype("int64") // 10**9
+            df.to_csv(data / "deriv_X_15m.csv", index=False)
+            argv = sys.argv
+            sys.argv = ["x", "--data-dir", str(data), "--symbols", "X", "--null-runs", "2", "--time-features", "--tag", "t",
+                        "--out-dir", str(Path(tmp) / "o"), "--cost", "0.0004", "--cost-map", "X=0.0002"]
+            try:
+                self.assertEqual(wf.main(), 0)
+            finally:
+                sys.argv = argv
+            self.assertTrue((Path(tmp) / "o" / "walkforward_report_t.md").exists())
+            self.assertTrue((Path(tmp) / "o" / "walkforward_candidate_rules_t.csv").exists())
+            report = (Path(tmp) / "o" / "walkforward_report_t.md").read_text()
+            self.assertIn("Session and weekday conditions were included", report)
+            self.assertIn("cost charged: 0.020%", report)

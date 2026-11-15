@@ -24,7 +24,7 @@ import argparse
 import math
 import os
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 import numpy as np
@@ -55,6 +55,7 @@ class SearchConfig:
     min_train_win: float = 0.55
     min_valid_win: float = 0.50
     keep_top: int = 150
+    time_features: bool = False  # add trading-session and weekday conditions (real markets)
 
 
 def simulate_trades(df: pd.DataFrame, cfg: SearchConfig) -> pd.DataFrame:
@@ -123,7 +124,7 @@ def segment_stats(returns: np.ndarray) -> dict[str, float]:
 
 def hypotheses(conditions: pd.DataFrame):
     """Yield (feature, condition, boolean mask) for single conditions and pairs."""
-    columns = [c for c in CONDITION_COLUMNS if c in conditions.columns]
+    columns = list(conditions.columns)
     codes = {}
     for column in columns:
         cat = pd.Categorical(conditions[column].astype(str))
@@ -158,6 +159,11 @@ def run_protocol(df: pd.DataFrame, cfg: SearchConfig) -> tuple[pd.DataFrame, int
         return pd.DataFrame(), 0
     trades = simulate_trades(df, cfg)
     conditions = condition_frame(df).astype(str)
+    if cfg.time_features:
+        stamps = pd.to_datetime(df["timestamp"], utc=True)
+        hour = stamps.dt.hour
+        conditions["session"] = np.select([hour < 7, hour < 12, hour < 16, hour < 21], ["asia_night", "europe_morning", "europe_us_overlap", "us_afternoon"], "late_us")
+        conditions["weekday"] = stamps.dt.day_name().str.lower().to_numpy()
     usable = np.arange(n) >= WARMUP_BARS
     train_end = WARMUP_BARS + int((n - WARMUP_BARS) * cfg.train_frac)
     valid_end = train_end + int((n - WARMUP_BARS) * cfg.valid_frac)
@@ -241,8 +247,18 @@ def main() -> int:
     parser.add_argument("--seed", type=int, default=7)
     parser.add_argument("--out-dir", default="outputs")
     parser.add_argument("--min-bars", type=int, default=2500, help="skip symbols with less history than this")
+    parser.add_argument("--cost", type=float, default=SearchConfig.cost, help="round-trip cost as a fraction of price (0.001 = 0.1%%)")
+    parser.add_argument("--sl-slippage", type=float, default=SearchConfig.sl_slippage)
+    parser.add_argument("--cost-map", default="", help="per-symbol costs, e.g. frxEURUSD=0.0003,cryBTCUSD=0.0015 (others use --cost)")
+    parser.add_argument("--time-features", action="store_true", help="also search trading-session and weekday conditions (real markets)")
+    parser.add_argument("--tag", default="", help="suffix for the output file names, e.g. markets")
     args = parser.parse_args()
-    cfg = SearchConfig()
+    cfg = SearchConfig(cost=args.cost, sl_slippage=args.sl_slippage, time_features=args.time_features)
+    tag = f"_{args.tag}" if args.tag else ""
+    cost_map = {}
+    for part in filter(None, (item.strip() for item in args.cost_map.split(","))):
+        name, _, value = part.partition("=")
+        cost_map[name.strip()] = float(value)
     data_dir = Path(args.data_dir)
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -256,17 +272,19 @@ def main() -> int:
             have = 0 if df is None else len(df)
             report.append(f"- **{symbol}**: skipped, only {have} candles (needs {args.min_bars}). Run work/download_history.py first.")
             continue
-        found, tried = run_protocol(df, cfg)
+        symbol_cfg = replace(cfg, cost=cost_map.get(symbol, cfg.cost))
+        found, tried = run_protocol(df, symbol_cfg)
         passes = int(found["final_pass"].sum()) if not found.empty else 0
         null_counts = []
         for _ in range(args.null_runs):
-            null_found, _t = run_protocol(shuffle_bars(df, rng), cfg)
+            null_found, _t = run_protocol(shuffle_bars(df, rng), symbol_cfg)
             null_counts.append(int(null_found["final_pass"].sum()) if not null_found.empty else 0)
         null_mean = float(np.mean(null_counts)) if null_counts else float("nan")
         p_value = (sum(1 for c in null_counts if c >= passes) + 1) / (len(null_counts) + 1) if null_counts else float("nan")
         days = (df["timestamp"].iloc[-1] - df["timestamp"].iloc[0]).days
         report += [
             f"## {symbol} {args.timeframe}: {len(df)} candles, {days} days",
+            f"- cost charged: {symbol_cfg.cost:.3%} per trade (plus {symbol_cfg.sl_slippage:.0%} extra on stop-outs)",
             f"- hypotheses tried (rule x side): {tried}",
             f"- survived train and validation, then judged on test: {0 if found.empty else len(found)}",
             f"- **passed the final test: {passes}**",
@@ -280,7 +298,7 @@ def main() -> int:
             real_rows.append(found)
     results = pd.concat(real_rows, ignore_index=True) if real_rows else pd.DataFrame()
     if not results.empty:
-        results.to_csv(out_dir / "walkforward_all_survivors.csv", index=False)
+        results.to_csv(out_dir / f"walkforward_all_survivors{tag}.csv", index=False)
         winners = results[results["final_pass"]].copy().reset_index(drop=True)
     else:
         winners = pd.DataFrame()
@@ -297,17 +315,17 @@ def main() -> int:
             "profit_factor": winners["test_pf"], "expectancy": winners["test_exp"],
             "symbol_rule_rank": winners.groupby("symbol").cumcount() + 1, "promotion_status": "walkforward_candidate",
         })
-    rules.to_csv(out_dir / "walkforward_candidate_rules.csv", index=False)
+    rules.to_csv(out_dir / f"walkforward_candidate_rules{tag}.csv", index=False)
     report += [
         "## How to read this",
-        "- A rule only counts if it worked on the train, validation and test thirds, in that order.",
+        "- A rule only counts if it worked on the train period (first half), then the validation quarter, then the final test quarter, in that order.",
         "- 'Chance of doing this well by luck' near 0.05 or lower would be real evidence; 0.20 or higher means the search found nothing better than noise.",
         "- Passing rules are candidates for PAPER trading only. They must still earn their record on live candles.",
-        f"- Costs charged: {cfg.cost:.2%} per trade plus {cfg.sl_slippage:.0%} extra on stop-outs.",
+        "- Session and weekday conditions were included in the search." if cfg.time_features else "- Session and weekday conditions were not searched.",
     ]
-    (out_dir / "walkforward_report.md").write_text("\n".join(report) + "\n")
+    (out_dir / f"walkforward_report{tag}.md").write_text("\n".join(report) + "\n")
     print("\n".join(report))
-    print(f"\nCandidate rules written: {len(rules)} -> {out_dir / 'walkforward_candidate_rules.csv'}")
+    print(f"\nCandidate rules written: {len(rules)} -> {out_dir / f'walkforward_candidate_rules{tag}.csv'}")
     return 0
 
 
