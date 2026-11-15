@@ -203,3 +203,17 @@ class ScorecardTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class EvaluateExistingTests(unittest.TestCase):
+    def test_rule_mask_and_slices(self):
+        import evaluate_existing_rules as ev
+        df = noise(5000)
+        rules = pd.DataFrame([{"rule_id": "R1", "symbol": "X", "suggested_side": "buy", "feature": "candle_body", "condition": "large_bear_body"},
+                              {"rule_id": "R2", "symbol": "X", "suggested_side": "sell", "feature": "nope+candle_body", "condition": "a & b"}])
+        table = ev.evaluate(df, rules, wf.SearchConfig())
+        self.assertEqual(set(table["rule_id"]), {"R1", "R2"})
+        r1 = table[(table.rule_id == "R1") & (table.period == "all")].iloc[0]
+        self.assertGreater(r1["trades"], 50)
+        r2 = table[(table.rule_id == "R2") & (table.period == "all")].iloc[0]
+        self.assertEqual(r2["trades"], 0)  # unknown feature never matches
