@@ -1,0 +1,10 @@
+{
+  "wallet": "PUT_YOUR_USDT_WALLET_ADDRESS_HERE",
+  "network": "BEP20",
+  "packs": [
+    {"name": "single", "credits": 1, "usd": 0.0},
+    {"name": "ten", "credits": 10, "usd": 0.0}
+  ],
+  "naira_per_usd": 0,
+  "owner_ids": []
+}
