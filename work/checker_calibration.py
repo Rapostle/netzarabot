@@ -34,12 +34,12 @@ def main() -> int:
     parser.add_argument("--series", type=int, default=30)
     parser.add_argument("--null-runs", type=int, default=500)
     args = parser.parse_args()
-    print(f"{args.series} synthetic markets per row, 6.8 years of daily data, rule momentum_60, costs 0.2% round trip")
+    print(f"{args.series} synthetic markets per row, 6.8 years of daily data, rule momentum_60, costs 0.2% round trip, luck chance corrected for 9 rules")
     print("planted_drift_per_day  share_passed  share_inconclusive  share_no_evidence")
     for drift in (0.0, 0.0005, 0.001, 0.002, 0.004):
         counts = {engine.VERDICT_PASS: 0, engine.VERDICT_MAYBE: 0, engine.VERDICT_NONE: 0}
         for seed in range(args.series):
-            res = engine.run_check(market(1000 + seed, drift), "momentum_60", null_runs=args.null_runs, seed=seed)
+            res = engine.run_check(market(1000 + seed, drift), "momentum_60", null_runs=args.null_runs, seed=seed, tests_counted=len(engine.RULE_NAMES))
             counts[res.verdict] = counts.get(res.verdict, 0) + 1
         n = args.series
         print(f"{drift:<22} {counts[engine.VERDICT_PASS] / n:<13.0%} {counts[engine.VERDICT_MAYBE] / n:<19.0%} {counts[engine.VERDICT_NONE] / n:.0%}")

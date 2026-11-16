@@ -69,9 +69,9 @@ class ReportAndPaymentTests(unittest.TestCase):
 
     def test_correction_sentence_only_when_many_tried(self):
         res = result(engine.VERDICT_NONE)
-        self.assertNotIn("combinations were tried", report.format_report(res))
+        self.assertNotIn("tries are counted", report.format_report(res))
         res.tests_counted = 40
-        self.assertIn("40 combinations", report.format_report(res))
+        self.assertIn("at least 40 tries", report.format_report(res))
 
     def test_price_shows_usd_first_with_naira_in_brackets(self):
         self.assertEqual(payments.price_text(5, 1500), "$5.00 (about ₦7,500)")

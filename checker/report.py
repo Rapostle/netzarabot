@@ -46,7 +46,7 @@ def format_report(res: CheckResult) -> str:
         luck_sentence(res.p_luck, res.null_runs),
     ]
     if res.tests_counted > 1:
-        lines.append(f"Today {res.tests_counted} combinations were tried in this service, so the luck chance is raised to {res.p_adjusted:.1%} to be fair.")
+        lines.append(f"Anyone can try many rules and coins here, so at least {res.tests_counted} tries are counted and the luck chance is raised to {res.p_adjusted:.1%} to be fair.")
     lines.append(f"Costs assumed: {res.cost_round_trip:.2%} per round trip.")
     if res.notes:
         lines += ["", "Cautions:"] + [f"- {n}" for n in res.notes]

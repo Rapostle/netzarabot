@@ -74,6 +74,10 @@ class BotTests(unittest.TestCase):
         self.assertIn("Unknown coin", self.text(OWNER, "/check FAKE momentum_20"))
         self.assertIn("Unknown rule", self.text(OWNER, "/check BTC magic"))
 
+    def test_correction_floor_counts_all_rules(self):
+        out = self.text(OWNER, "/check BTC momentum_20")
+        self.assertIn("at least 9 tries", out)
+
     def test_no_advice_words(self):
         out = self.text(OWNER, "/check BTC momentum_20").lower()
         for word in ("you should buy", "guaranteed", "sure profit"):

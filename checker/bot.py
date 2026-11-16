@@ -88,7 +88,7 @@ class Bot:
                 res = engine.CheckResult(**cached)
             else:
                 res = engine.run_check(self.get_close(coin), rule, market=coin, null_runs=self.null_runs,
-                                       tests_counted=self.store.combinations_today(day) + 1)
+                                       tests_counted=max(len(engine.RULE_NAMES), self.store.combinations_today(day) + 1))
                 self.store.save_report(day, coin, rule, res.as_dict())
         except Exception:
             self.store.refund_credit(user_id)
