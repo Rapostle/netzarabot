@@ -156,6 +156,7 @@ def build_scorecard(repo_root: Path, now: datetime | None = None) -> str:
     else:
         lines.append("Closed demo trades: 0 so far")
     lines.append(f"Verdict: {verdict(closed)}")
+    lines.append("Role of the demo: it checks real fills, stops and alerts. Whether any rule has an edge is judged by the history tests and the coin paper books.")
     lines.append(f"Last 24h: {opened} opened, {len(skipped)} skipped, {errors} errors, {open_now} open now")
     for row in skipped[-3:]:
         lines.append(f"  skipped {row.get('symbol', '')} {row.get('side', '')}: {row.get('message', '').replace('skipped: ', '')[:90]}")
