@@ -113,6 +113,23 @@ def live_rules(repo_root: Path, now: datetime) -> dict[str, int]:
     return counts
 
 
+def coin_section(outputs: Path) -> list[str]:
+    lines = []
+    for name in ("ungated", "gated"):
+        path = outputs / f"coin_paper_{name}_state.json"
+        if not path.exists():
+            continue
+        try:
+            state = json.loads(path.read_text())
+        except ValueError:
+            continue
+        closed = state.get("closed", 0)
+        wr = f"{state.get('wins', 0) / closed:.0%}" if closed else "n/a"
+        lines.append(f"Coin paper book '{name}' (pretend money): {len(state.get('positions', {}))} open, {closed} closed, "
+                     f"win rate {wr}, net {state.get('realized', 0.0):+.2f} USD after costs")
+    return lines
+
+
 def build_scorecard(repo_root: Path, now: datetime | None = None) -> str:
     now = now or datetime.now(timezone.utc)
     outputs = repo_root / "outputs"
@@ -148,6 +165,7 @@ def build_scorecard(repo_root: Path, now: datetime | None = None) -> str:
         lines.append("Rules that produced signals in 14 days: none")
     if frozen:
         lines.append("Switched off by the kill-switch: " + ", ".join(frozen))
+    lines += coin_section(outputs)
     lines.append("Real-money trading: DISARMED")
     return "\n".join(lines)
 
