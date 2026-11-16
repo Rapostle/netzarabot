@@ -15,6 +15,7 @@ RULE_TEXT = {
     "breakout_20": "buy a new 20-day high, sell a new 20-day low",
     "breakout_55": "buy a new 55-day high, sell a new 55-day low",
     "mean_reversion_5": "bet against sharp 5-day moves",
+    "consensus": "trade only when at least 5 of the 9 other rules agree",
 }
 
 VERDICT_LINE = {
@@ -47,6 +48,8 @@ def format_report(res: CheckResult) -> str:
     ]
     if res.tests_counted > 1:
         lines.append(f"Anyone can try many rules and coins here, so at least {res.tests_counted} tries are counted and the luck chance is raised to {res.p_adjusted:.1%} to be fair.")
+    if res.layers != "plain":
+        lines.append(f"Risk layers on: {res.layers}.")
     lines.append(f"Costs assumed: {res.cost_round_trip:.2%} per round trip.")
     if res.notes:
         lines += ["", "Cautions:"] + [f"- {n}" for n in res.notes]

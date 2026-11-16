@@ -2,6 +2,7 @@
 
 One book, "gated": a rule trades only while the honesty checker's verdict allows it (pass or inconclusive).
 Signals come only from CLOSED daily candles. Costs are charged on every open and close.
+Optional risk layers (see checker/layers.py): skip choppy markets, and size positions down when volatility is high.
 Every position also has a stop-loss and a take-profit (in daily ATRs), checked against each day's high and low.
 Note: the checker's verdict tests the rule WITHOUT stops, so the stops are an extra risk control, not part of the verdict.
 """
@@ -19,6 +20,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from checker import engine  # noqa: E402
+from checker import layers as lay  # noqa: E402
 
 GATE_MODES = ("off", "watch", "strict")  # off: always allowed; watch: pass or inconclusive; strict: pass only
 JOURNAL_FIELDS = ["time", "book", "market", "rule", "action", "side", "price", "notional", "pnl", "gate_verdict", "note"]
@@ -56,11 +58,12 @@ def atr14(high: pd.Series, low: pd.Series, close: pd.Series) -> float:
 
 class Book:
     def __init__(self, name: str, mode: str, directory: str, notional: float = 100.0, cost_round_trip: float = 0.002,
-                 stop_atr: float = 3.0, take_atr: float = 6.0):
+                 stop_atr: float = 3.0, take_atr: float = 6.0, layers: "lay.Layers | None" = None):
         if mode not in GATE_MODES:
             raise ValueError(f"gate mode must be one of {GATE_MODES}")
         self.name, self.mode, self.notional, self.cost = name, mode, float(notional), float(cost_round_trip)
         self.stop_atr, self.take_atr = float(stop_atr), float(take_atr)
+        self.layers = layers
         self.dir = Path(directory)
         self.dir.mkdir(parents=True, exist_ok=True)
         self.state_path = self.dir / f"coin_paper_{name}_state.json"
@@ -81,14 +84,15 @@ class Book:
             writer.writerow({k: row.get(k, "") for k in JOURNAL_FIELDS})
 
     def _close(self, combo: Combo, held: dict, price: float, action: str, stamp: str, verdict: str) -> float:
-        gross = held["side"] * (price / held["entry"] - 1.0) * self.notional
-        pnl = gross - self.notional * self.cost / 2
+        size_usd = float(held.get("notional", self.notional))
+        gross = held["side"] * (price / held["entry"] - 1.0) * size_usd
+        pnl = gross - size_usd * self.cost / 2
         self.state["realized"] += pnl
         self.state["closed"] += 1
         self.state["wins"] += 1 if pnl > 0 else 0
         del self.state["positions"][combo.key]
         self._log({"time": stamp, "book": self.name, "market": combo.market, "rule": combo.rule, "action": action,
-                   "side": held["side"], "price": price, "notional": self.notional, "pnl": round(pnl, 4), "gate_verdict": verdict})
+                   "side": held["side"], "price": price, "notional": round(size_usd, 4), "pnl": round(pnl, 4), "gate_verdict": verdict})
         return pnl
 
     def _levels(self, side: int, price: float, atr: float) -> tuple[float | None, float | None]:
@@ -131,7 +135,11 @@ class Book:
         else:
             atr = float("nan")
         stamp = now.astimezone(timezone.utc).isoformat(timespec="seconds")
-        signal = int(dtt.RULES[combo.rule](close).iloc[-1])
+        raw = dtt.RULES[combo.rule](close)
+        if self.layers is not None:
+            signal, size = lay.latest_signal_and_size(close, raw, self.layers)
+        else:
+            signal, size = int(raw.iloc[-1]), 1.0
         price = float(close.iloc[-1])
         held = self.state["positions"].get(combo.key)
         if held and have_ohlc:
@@ -161,11 +169,14 @@ class Book:
         if held:
             self._close(combo, held, price, "close", stamp, verdict)
         if desired != 0:
-            self.state["realized"] -= self.notional * self.cost / 2
+            size_usd = self.notional * size
+            self.state["realized"] -= size_usd * self.cost / 2
             stop, target = self._levels(desired, price, atr)
-            self.state["positions"][combo.key] = {"side": desired, "entry": price, "opened": day, "stop": stop, "target": target}
+            self.state["positions"][combo.key] = {"side": desired, "entry": price, "opened": day, "stop": stop, "target": target,
+                                                  "notional": size_usd}
             self._log({"time": stamp, "book": self.name, "market": combo.market, "rule": combo.rule, "action": "open",
-                       "side": desired, "price": price, "notional": self.notional, "pnl": "", "gate_verdict": verdict, "note": note})
+                       "side": desired, "price": price, "notional": round(size_usd, 4), "pnl": "", "gate_verdict": verdict,
+                       "note": note or (f"size {size:.2f}" if size < 1 else "")})
         self._save()
         return f"changed {current}->{desired}" + (f" ({note})" if note else "")
 
@@ -174,7 +185,7 @@ class Book:
         for key, pos in self.state["positions"].items():
             market = key.split("|")[0]
             if market in last_prices:
-                unreal += pos["side"] * (last_prices[market] / pos["entry"] - 1.0) * self.notional
+                unreal += pos["side"] * (last_prices[market] / pos["entry"] - 1.0) * float(pos.get("notional", self.notional))
         closed = self.state["closed"]
         return {"book": self.name, "mode": self.mode, "open": len(self.state["positions"]), "closed": closed,
                 "win_rate": round(self.state["wins"] / closed, 3) if closed else 0.0,

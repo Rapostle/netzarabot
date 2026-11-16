@@ -60,6 +60,18 @@ RULES = {
 }
 
 
+def _consensus(close: pd.Series) -> pd.Series:
+    """Trade only when most (5 or more) of the nine base rules agree; otherwise stay out."""
+    votes = pd.concat([fn(close) for fn in BASE_RULES.values()], axis=1)
+    longs, shorts = (votes > 0).sum(axis=1), (votes < 0).sum(axis=1)
+    need = len(BASE_RULES) // 2 + 1
+    return pd.Series(np.where(longs >= need, 1.0, np.where(shorts >= need, -1.0, 0.0)), index=close.index)
+
+
+BASE_RULES = dict(RULES)
+RULES["consensus"] = _consensus
+
+
 def strategy_returns(close: pd.Series, rule: str, cost_one_way: float, hold_cost: float) -> pd.Series:
     """Daily net return: yesterday's signal decides today's position."""
     signal = RULES[rule](close)

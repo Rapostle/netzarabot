@@ -76,7 +76,7 @@ class BotTests(unittest.TestCase):
 
     def test_correction_floor_counts_all_rules(self):
         out = self.text(OWNER, "/check BTC momentum_20")
-        self.assertIn("at least 9 tries", out)
+        self.assertIn("at least 10 tries", out)
 
     def test_no_advice_words(self):
         out = self.text(OWNER, "/check BTC momentum_20").lower()

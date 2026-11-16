@@ -13,21 +13,22 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from checker import engine  # noqa: E402
+from checker.layers import Layers  # noqa: E402
 from checker.data import fetch_ohlc  # noqa: E402
 from coinbot.paper import Book, Combo, run_cycle, closed_only  # noqa: E402
 
 DEFAULT_COINS = ["BTC", "ETH", "SOL", "BNB"]
 
 
-def make_gate(cache_path: Path, combos_count: int, now: datetime, null_runs: int = 500):
+def make_gate(cache_path: Path, combos_count: int, now: datetime, null_runs: int = 500, layers: Layers | None = None):
     """Checker verdict per market and rule, recomputed once a week."""
     week = now.strftime("%G-W%V")
     cache = json.loads(cache_path.read_text()) if cache_path.exists() else {}
 
     def gate(market: str, rule: str, close) -> str:
-        key = f"{market}|{rule}|{week}"
+        key = f"{market}|{rule}|{week}|{layers.label() if layers else 'plain'}"
         if key not in cache:
-            res = engine.run_check(close, rule, market=market, null_runs=null_runs, tests_counted=combos_count)
+            res = engine.run_check(close, rule, market=market, null_runs=null_runs, tests_counted=combos_count, layers=layers)
             cache[key] = res.verdict
             cache_path.write_text(json.dumps(cache, indent=1))
         return cache[key]
@@ -40,6 +41,7 @@ def main() -> int:
     parser.add_argument("--coins", nargs="+", default=DEFAULT_COINS)
     parser.add_argument("--rules", nargs="+", default=list(engine.RULE_NAMES))
     parser.add_argument("--notional", type=float, default=100.0)
+    parser.add_argument("--no-layers", action="store_true", help="turn off the choppy-market filter and volatility sizing")
     parser.add_argument("--stop-atr", type=float, default=3.0, help="stop-loss distance in daily ATRs (0 turns it off)")
     parser.add_argument("--take-atr", type=float, default=6.0, help="take-profit distance in daily ATRs (0 turns it off)")
     args = parser.parse_args()
@@ -55,8 +57,10 @@ def main() -> int:
         except Exception as exc:  # one bad coin must not stop the others
             failed.append(f"{coin}: {exc}")
     combos = [Combo(c, r) for c in closes for r in args.rules]
-    books = [Book("gated", "watch", str(out), args.notional, stop_atr=args.stop_atr, take_atr=args.take_atr)]
-    result = run_cycle(books, combos, closes, make_gate(out / "coin_gate_cache.json", max(1, len(combos)), now), now, highs, lows)
+    layers = None if args.no_layers else Layers()
+    books = [Book("gated", "watch", str(out), args.notional, stop_atr=args.stop_atr, take_atr=args.take_atr, layers=layers)]
+    gate = make_gate(out / "coin_gate_cache.json", max(1, len(combos)), now, layers=layers)
+    result = run_cycle(books, combos, closes, gate, now, highs, lows)
     for name, lines in result.items():
         acted = [l for l in lines if "changed" in l or "hit" in l]
         print(f"{name}: {len(lines)} checked, {len(acted)} changed")

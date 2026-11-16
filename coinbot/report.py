@@ -41,10 +41,10 @@ def last_prices(cache_dir: Path, markets: set[str]) -> dict[str, float]:
 
 def book_stats(outputs: Path, name: str, prices: dict[str, float], notional: float = 100.0, cost: float = 0.002) -> dict:
     state = _state(outputs, name)
-    unreal = sum(p["side"] * (prices[k.split("|")[0]] / p["entry"] - 1.0) * notional
+    unreal = sum(p["side"] * (prices[k.split("|")[0]] / p["entry"] - 1.0) * float(p.get("notional", notional))
                  for k, p in state["positions"].items() if k.split("|")[0] in prices)
     rows = [r for r in _journal(outputs, name) if r["action"] in ("close", "stop", "target") and r["pnl"] not in ("", None)]
-    nets = [float(r["pnl"]) - notional * cost / 2 for r in rows]  # charge the opening half-cost to each closed trade
+    nets = [float(r["pnl"]) - float(r["notional"] or notional) * cost / 2 for r in rows]  # charge the opening half-cost to each closed trade
     by_rule: dict[str, list[float]] = {}
     for r, n in zip(rows, nets):
         by_rule.setdefault(r["rule"], []).append(n)

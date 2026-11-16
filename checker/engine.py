@@ -17,6 +17,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "work"))
 import daily_trend_test as dtt  # noqa: E402
+from checker import layers as lay  # noqa: E402
 
 RULE_NAMES = tuple(dtt.RULES)
 MIN_DAYS = 500            # below this the engine refuses: too little data to say anything
@@ -51,18 +52,26 @@ class CheckResult:
     cost_round_trip: float
     verdict: str
     notes: list[str] = field(default_factory=list)
+    layers: str = "plain"
 
     def as_dict(self) -> dict:
         return asdict(self)
 
 
-def _count_trades(close: pd.Series, rule: str) -> int:
-    position = dtt.RULES[rule](close).shift(1).fillna(0.0)
+def _returns(close: pd.Series, rule: str, cost_one_way: float, hold_cost: float, layers: "lay.Layers | None") -> pd.Series:
+    if layers is None:
+        return dtt.strategy_returns(close, rule, cost_one_way, hold_cost)
+    return lay.layered_returns(close, dtt.RULES[rule](close), cost_one_way, hold_cost, layers)
+
+
+def _count_trades(close: pd.Series, rule: str, layers: "lay.Layers | None" = None) -> int:
+    position = lay.filtered_signal(close, dtt.RULES[rule](close), layers).shift(1).fillna(0.0)
     return int(position.diff().abs().fillna(position.abs()).sum() // 2 + (1 if position.iloc[-1] != 0 else 0))
 
 
 def run_check(close: pd.Series, rule: str, market: str = "", cost_round_trip: float = 0.002,
-              hold_cost: float = 0.0, null_runs: int = 1000, seed: int = 11, tests_counted: int = 1) -> CheckResult:
+              hold_cost: float = 0.0, null_runs: int = 1000, seed: int = 11, tests_counted: int = 1,
+              layers: "lay.Layers | None" = None) -> CheckResult:
     """Run one rule on one daily close series. `tests_counted` is how many market/rule
     combinations were tried in the same period (the correction for trying many)."""
     if rule not in dtt.RULES:
@@ -78,20 +87,20 @@ def run_check(close: pd.Series, rule: str, market: str = "", cost_round_trip: fl
 
     ppy = days / years if years > 0 else 365.0
     half = days // 2
-    net = dtt.strategy_returns(close, rule, cost_round_trip / 2, hold_cost)
+    net = _returns(close, rule, cost_round_trip / 2, hold_cost, layers)
     real = dtt.sharpe(net, ppy)
     rng = np.random.default_rng(seed)
     beaten = 0
     for _ in range(null_runs):
         fake = dtt.shuffled_close(close, rng)
-        if dtt.sharpe(dtt.strategy_returns(fake, rule, cost_round_trip / 2, hold_cost), ppy) >= real:
+        if dtt.sharpe(_returns(fake, rule, cost_round_trip / 2, hold_cost, layers), ppy) >= real:
             beaten += 1
     p = (beaten + 1) / (null_runs + 1)
     p_adj = min(1.0, p * max(1, tests_counted))
     first, second = dtt.sharpe(net.iloc[:half], ppy), dtt.sharpe(net.iloc[half:], ppy)
     hold_ret = float(close.iloc[-1] / close.iloc[0] - 1) * 100
     total_ret = float((1 + net).prod() - 1) * 100
-    trades = _count_trades(close, rule)
+    trades = _count_trades(close, rule, layers)
     persistent = first > 0 and second > 0 and real > 0
 
     if null_runs < MIN_NULL_RUNS_FOR_PASS:
@@ -116,4 +125,4 @@ def run_check(close: pd.Series, rule: str, market: str = "", cost_round_trip: fl
         verdict = VERDICT_NONE
     return CheckResult(rule, market, days, round(years, 1), trades, round(real, 2), round(first, 2), round(second, 2),
                        round(total_ret, 1), round(hold_ret, 1), round(dtt.sharpe(close.pct_change().fillna(0.0), ppy), 2),
-                       round(p, 4), round(p_adj, 4), tests_counted, null_runs, cost_round_trip, verdict, notes)
+                       round(p, 4), round(p_adj, 4), tests_counted, null_runs, cost_round_trip, verdict, notes, layers.label() if layers else "plain")

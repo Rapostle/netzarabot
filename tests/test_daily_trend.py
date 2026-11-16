@@ -72,7 +72,7 @@ class FindingTests(unittest.TestCase):
                 sys.argv = argv
             report = (Path(tmp) / "o" / "daily_trend_report.md").read_text()
             self.assertIn("SHORT: skipped", report)
-            self.assertIn("total tests: 9", report)
+            self.assertIn("total tests: 10", report)
             self.assertTrue((Path(tmp) / "o" / "daily_trend_results.csv").exists())
 
 
