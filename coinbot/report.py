@@ -43,7 +43,7 @@ def book_stats(outputs: Path, name: str, prices: dict[str, float], notional: flo
     state = _state(outputs, name)
     unreal = sum(p["side"] * (prices[k.split("|")[0]] / p["entry"] - 1.0) * notional
                  for k, p in state["positions"].items() if k.split("|")[0] in prices)
-    rows = [r for r in _journal(outputs, name) if r["action"] == "close" and r["pnl"] not in ("", None)]
+    rows = [r for r in _journal(outputs, name) if r["action"] in ("close", "stop", "target") and r["pnl"] not in ("", None)]
     nets = [float(r["pnl"]) - notional * cost / 2 for r in rows]  # charge the opening half-cost to each closed trade
     by_rule: dict[str, list[float]] = {}
     for r, n in zip(rows, nets):
@@ -61,24 +61,29 @@ def _line(s: dict) -> str:
 
 
 def build_weekly(outputs: Path, cache_dir: Path, now: datetime) -> str:
-    markets = {k.split("|")[0] for n in ("ungated", "gated") for k in _state(outputs, n)["positions"]}
+    markets = {k.split("|")[0] for k in _state(outputs, "gated")["positions"]}
     prices = last_prices(cache_dir, markets)
-    u, g = book_stats(outputs, "ungated", prices), book_stats(outputs, "gated", prices)
-    lines = [f"Coin paper bot, weekly report (PRETEND money), {now:%d %b %Y}", "", _line(u), _line(g), ""]
-    if min(u["closed"], g["closed"]) < MIN_TRADES_FOR_VERDICT:
-        lines.append(f"Verdict: too early. Ungated has {u['closed']} and gated has {g['closed']} closed trades; "
-                     f"we need {MIN_TRADES_FOR_VERDICT} in each before comparing.")
-    else:
-        diff = g["avg"] - u["avg"]
-        better = "gated" if diff > 0 else "ungated"
-        lines.append(f"Verdict: {better} is ahead by {abs(diff):.2f} USD per trade. Treat this as ONE experiment: the bets overlap "
+    g = book_stats(outputs, "gated", prices)
+    exits: dict[str, int] = {}
+    for r in _journal(outputs, "gated"):
+        if r["action"] in ("close", "stop", "target"):
+            exits[r["action"]] = exits.get(r["action"], 0) + 1
+    lines = [f"Coin paper bot, weekly report (PRETEND money), {now:%d %b %Y}", "", _line(g)]
+    if exits:
+        lines.append("How trades ended: " + ", ".join(f"{n} by {'rule flip' if k == 'close' else k + (' hit' if k != 'target' else ' hit')}" for k, n in sorted(exits.items())))
+    lines.append("")
+    if g["closed"] < MIN_TRADES_FOR_VERDICT:
+        lines.append(f"Verdict: too early. {g['closed']} closed trades so far; we need {MIN_TRADES_FOR_VERDICT} before judging.")
+    elif g["avg"] > 0:
+        lines.append(f"Verdict: ahead so far, {g['avg']:+.2f} USD per trade on pretend money. Treat it as ONE experiment: the bets overlap "
                      "(many rules and coins move together), so it is weaker evidence than the trade count suggests.")
-    ranked = sorted(u["by_rule"].items(), key=lambda kv: kv[1][1])
+    else:
+        lines.append(f"Verdict: not working so far, {g['avg']:+.2f} USD per trade on pretend money.")
+    ranked = sorted(g["by_rule"].items(), key=lambda kv: kv[1][1])
     if ranked:
         worst, best = ranked[:2], ranked[-2:][::-1]
-        lines += ["", "Ungated, by rule (closed trades, net USD): best "
-                  + ", ".join(f"{k} {n} / {t:+.2f}" for k, (n, t) in best) + "; worst "
-                  + ", ".join(f"{k} {n} / {t:+.2f}" for k, (n, t) in worst)]
+        lines += ["", "By rule (closed trades / net USD): best " + ", ".join(f"{k} {n} / {t:+.2f}" for k, (n, t) in best)
+                  + "; worst " + ", ".join(f"{k} {n} / {t:+.2f}" for k, (n, t) in worst)]
     lines += ["", "Short positions ignore funding fees, so shorts look slightly better than they would be live.",
               "Real-money trading: DISARMED"]
     return "\n".join(lines)

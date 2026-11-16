@@ -50,3 +50,12 @@ def _read(path: Path) -> pd.Series:
     idx = pd.to_datetime(df["timestamp"], unit="s", utc=True)
     close = pd.Series(df["close"].astype(float).to_numpy(), index=idx)
     return close[~close.index.duplicated(keep="last")].sort_index()
+
+
+def fetch_ohlc(coin: str, years: int = 12, cache_dir: str = "checker_cache") -> pd.DataFrame:
+    """Daily open/high/low/close indexed by UTC time (refreshes the cache like fetch_close)."""
+    fetch_close(coin, years=years, cache_dir=cache_dir)
+    df = pd.read_csv(Path(cache_dir) / f"{coin.upper()}_1d.csv")
+    df.index = pd.to_datetime(df["timestamp"], unit="s", utc=True)
+    df = df[~df.index.duplicated(keep="last")].sort_index()
+    return df[["open", "high", "low", "close"]].astype(float)

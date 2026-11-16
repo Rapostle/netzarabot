@@ -29,8 +29,7 @@ class WeeklyTests(unittest.TestCase):
     def test_too_early_message_and_disarmed_line(self):
         with tempfile.TemporaryDirectory() as d:
             out = Path(d)
-            write_book(out, "ungated", [1.0, -2.0])
-            write_book(out, "gated", [0.5])
+            write_book(out, "gated", [1.0, -2.0])
             text = build_weekly(out, out, NOW)
             self.assertIn("too early", text)
             self.assertIn("DISARMED", text)
@@ -39,18 +38,23 @@ class WeeklyTests(unittest.TestCase):
     def test_per_trade_net_charges_opening_cost(self):
         with tempfile.TemporaryDirectory() as d:
             out = Path(d)
-            write_book(out, "ungated", [1.0, 1.0])
-            s = book_stats(out, "ungated", {})
+            write_book(out, "gated", [1.0, 1.0])
+            s = book_stats(out, "gated", {})
             self.assertAlmostEqual(s["avg"], 0.9, places=6)
 
     def test_verdict_warns_about_overlap_once_enough_trades(self):
         with tempfile.TemporaryDirectory() as d:
             out = Path(d)
-            write_book(out, "ungated", [-1.0] * 30)
             write_book(out, "gated", [0.5] * 30)
             text = build_weekly(out, out, NOW)
-            self.assertIn("gated is ahead", text)
+            self.assertIn("ahead so far", text)
             self.assertIn("ONE experiment", text)
+
+    def test_losing_book_is_called_losing(self):
+        with tempfile.TemporaryDirectory() as d:
+            out = Path(d)
+            write_book(out, "gated", [-0.5] * 30)
+            self.assertIn("not working so far", build_weekly(out, out, NOW))
 
     def test_missing_files_do_not_crash(self):
         with tempfile.TemporaryDirectory() as d:

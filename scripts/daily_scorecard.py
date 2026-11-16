@@ -115,7 +115,7 @@ def live_rules(repo_root: Path, now: datetime) -> dict[str, int]:
 
 def coin_section(outputs: Path) -> list[str]:
     lines = []
-    for name in ("ungated", "gated"):
+    for name in ("gated",):
         path = outputs / f"coin_paper_{name}_state.json"
         if not path.exists():
             continue
