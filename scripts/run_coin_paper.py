@@ -35,6 +35,25 @@ def make_gate(cache_path: Path, combos_count: int, now: datetime, null_runs: int
     return gate
 
 
+def migrate_positions(state_path: Path, stop_atr: float, old_stop_atr: float = 3.0) -> int:
+    """One-off: open positions made under the old 3-ATR stop get their stop re-set to `stop_atr` ATRs from their entry.
+    Positions that already record their ATR are left alone, so this runs once and never loosens anything later."""
+    if not state_path.exists() or stop_atr <= 0:
+        return 0
+    state = json.loads(state_path.read_text())
+    changed = 0
+    for pos in state.get("positions", {}).values():
+        if pos.get("atr") or not pos.get("stop"):
+            continue
+        atr = abs(pos["entry"] - pos["stop"]) / old_stop_atr
+        pos["atr"] = atr
+        pos["stop0"] = pos["stop"] = pos["entry"] - pos["side"] * stop_atr * atr
+        changed += 1
+    if changed:
+        state_path.write_text(json.dumps(state, indent=1))
+    return changed
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("--repo-root", default=".")
@@ -42,8 +61,8 @@ def main() -> int:
     parser.add_argument("--rules", nargs="+", default=list(engine.RULE_NAMES))
     parser.add_argument("--notional", type=float, default=100.0)
     parser.add_argument("--no-layers", action="store_true", help="turn off the choppy-market filter and volatility sizing")
-    parser.add_argument("--stop-atr", type=float, default=3.0, help="stop-loss distance in daily ATRs (0 turns it off)")
-    parser.add_argument("--trail-atr", type=float, default=2.0, help="also run a paired book whose stop trails the best price by this many ATRs (0 = off)")
+    parser.add_argument("--stop-atr", type=float, default=1.0, help="stop-loss distance in daily ATRs (0 turns it off)")
+    parser.add_argument("--trail-atr", type=float, default=1.0, help="also run a paired book whose stop trails the best price by this many ATRs (0 = off)")
     parser.add_argument("--take-atr", type=float, default=6.0, help="take-profit distance in daily ATRs (0 turns it off)")
     args = parser.parse_args()
     root = Path(args.repo_root)
@@ -59,6 +78,9 @@ def main() -> int:
             failed.append(f"{coin}: {exc}")
     combos = [Combo(c, r) for c in closes for r in args.rules]
     layers = None if args.no_layers else Layers()
+    moved = migrate_positions(out / "coin_paper_gated_state.json", args.stop_atr)
+    if moved:
+        print(f"re-set the stop on {moved} open positions to {args.stop_atr:g} ATR from their entry")
     books = [Book("gated", "watch", str(out), args.notional, stop_atr=args.stop_atr, take_atr=args.take_atr, layers=layers)]
     if args.trail_atr > 0:
         trail_state = out / "coin_paper_gated_trail_state.json"
