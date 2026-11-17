@@ -25,6 +25,14 @@ class CoinStatusTests(unittest.TestCase):
         self.assertAlmostEqual(r["coins"]["BNB"]["unrealised"], 10.0)   # long 100, +10%
         self.assertEqual(r["coins"]["BTC"]["exposure"], -150.0)
 
+    def test_costs_are_counted(self):
+        rows = ROWS + [["t", "gated", "BTC", "a", "open", "-1", "1", "100", "", "x"]]
+        r = cs.compute(STATE, rows, {"BTC": 100.0, "BNB": 10.0}, cost_round_trip=0.002)
+        self.assertAlmostEqual(r["total"]["entry_costs"], 0.2)             # two opens of $100 at 0.1% each
+        self.assertAlmostEqual(r["total"]["exit_costs"], 0.25)             # three open positions: 250 notional at 0.1%
+        self.assertAlmostEqual(r["total"]["realised_net"], 0.2 - 0.2)
+        self.assertIn("Net if everything closed now", cs.render(r, "now"))
+
     def test_missing_price_counts_zero(self):
         r = cs.compute(STATE, ROWS, {"BTC": 90.0})
         self.assertEqual(r["coins"]["BNB"]["unrealised"], 0.0)
@@ -33,7 +41,7 @@ class CoinStatusTests(unittest.TestCase):
         text = cs.render(cs.compute(STATE, ROWS, {"BTC": 90.0, "BNB": 11.0}), "now")
         self.assertIn("net short", text)
         self.assertIn("net long", text)
-        self.assertIn("Realised + open now", text)
+        self.assertIn("Net if everything closed now", text)
 
 
 if __name__ == "__main__":
