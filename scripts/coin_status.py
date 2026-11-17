@@ -58,16 +58,17 @@ def render(res: dict, as_of: str) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("--repo-root", default=".")
+    parser.add_argument("--book", default="gated", help="gated (stop and target) or gated_trail (trailing stop)")
     args = parser.parse_args()
     out = Path(args.repo_root) / "outputs"
-    state = json.loads((out / "coin_paper_gated_state.json").read_text())
-    with (out / "coin_paper_gated_journal.csv").open() as h:
+    state = json.loads((out / f"coin_paper_{args.book}_state.json").read_text())
+    with (out / f"coin_paper_{args.book}_journal.csv").open() as h:
         rows = list(csv.reader(h))
     from checker.data import fetch_ohlc
     from coinbot.paper import closed_only
     now = datetime.now(timezone.utc)
     prices = {}
-    for coin in sorted({k.split("|")[0] for k in state.get("positions", {})} | {r[2] for r in rows if len(r) > 2}):
+    for coin in sorted({k.split("|")[0] for k in state.get("positions", {})} | {r[2] for r in rows if len(r) > 4 and r[4] in ("open", "close")}):
         try:
             prices[coin] = float(closed_only(fetch_ohlc(coin, cache_dir=str(Path(args.repo_root) / "checker_cache"))["close"], now).iloc[-1])
         except Exception as exc:

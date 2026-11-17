@@ -180,3 +180,49 @@ class PaperTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TrailingStopTests(unittest.TestCase):
+    def _series(self, rows):
+        idx = pd.date_range("2026-03-02", periods=len(rows), freq="D", tz="UTC")
+        return pd.Series([r[0] for r in rows], index=idx), pd.Series([r[1] for r in rows], index=idx)
+
+    def test_trailing_stop_locks_profit_that_a_fixed_stop_gives_back(self):
+        import tempfile
+        from coinbot.paper import Book
+        # long from 100, ATR 10: fixed stop 70, target 160. Price runs to 140 then falls back to 105.
+        high, low = self._series([(110, 99), (140, 120), (135, 105)])
+        held = {"side": 1, "entry": 100.0, "opened": "2026-03-01", "stop": 70.0, "stop0": 70.0, "target": 160.0, "atr": 10.0}
+        with tempfile.TemporaryDirectory() as d:
+            fixed = Book("a", "watch", d)
+            trail = Book("b", "watch", d, trail_atr=2.0)
+            self.assertIsNone(fixed._hit(dict(held), high, low))
+            kind, level = trail._hit(dict(held), high, low)
+        self.assertEqual(kind, "trail_stop")
+        self.assertEqual(level, 120.0)   # best 140 minus 2 ATR
+
+    def test_trailing_stop_never_loosens_and_short_mirrors(self):
+        import tempfile
+        from coinbot.paper import Book
+        high, low = self._series([(101, 80), (96, 90), (100, 91)])
+        held = {"side": -1, "entry": 100.0, "opened": "2026-03-01", "stop": 130.0, "stop0": 130.0, "target": 40.0, "atr": 10.0}
+        with tempfile.TemporaryDirectory() as d:
+            kind, level = Book("b", "watch", d, trail_atr=2.0)._hit(dict(held), high, low)
+        self.assertEqual((kind, level), ("trail_stop", 100.0))   # best 80 plus 2 ATR = 100; day 3 high 100 touches it
+
+    def test_same_candle_cannot_save_a_trade_with_its_own_high(self):
+        import tempfile
+        from coinbot.paper import Book
+        high, low = self._series([(150, 60)])  # huge high and a low through the fixed stop on one candle
+        held = {"side": 1, "entry": 100.0, "opened": "2026-03-01", "stop": 70.0, "stop0": 70.0, "target": 160.0, "atr": 10.0}
+        with tempfile.TemporaryDirectory() as d:
+            kind, level = Book("b", "watch", d, trail_atr=2.0)._hit(dict(held), high, low)
+        self.assertEqual((kind, level), ("stop", 70.0))
+
+    def test_trailing_off_behaves_as_before(self):
+        import tempfile
+        from coinbot.paper import Book
+        high, low = self._series([(110, 99), (140, 120), (135, 105)])
+        held = {"side": 1, "entry": 100.0, "opened": "2026-03-01", "stop": 70.0, "target": 160.0}
+        with tempfile.TemporaryDirectory() as d:
+            self.assertIsNone(Book("a", "watch", d)._hit(held, high, low))

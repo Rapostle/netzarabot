@@ -58,11 +58,12 @@ def atr14(high: pd.Series, low: pd.Series, close: pd.Series) -> float:
 
 class Book:
     def __init__(self, name: str, mode: str, directory: str, notional: float = 100.0, cost_round_trip: float = 0.002,
-                 stop_atr: float = 3.0, take_atr: float = 6.0, layers: "lay.Layers | None" = None):
+                 stop_atr: float = 3.0, take_atr: float = 6.0, layers: "lay.Layers | None" = None, trail_atr: float = 0.0):
         if mode not in GATE_MODES:
             raise ValueError(f"gate mode must be one of {GATE_MODES}")
         self.name, self.mode, self.notional, self.cost = name, mode, float(notional), float(cost_round_trip)
         self.stop_atr, self.take_atr = float(stop_atr), float(take_atr)
+        self.trail_atr = float(trail_atr)  # >0: the stop follows the best price by this many ATRs and never loosens
         self.layers = layers
         self.dir = Path(directory)
         self.dir.mkdir(parents=True, exist_ok=True)
@@ -103,8 +104,18 @@ class Book:
         return stop, target
 
     def _hit(self, held: dict, high: pd.Series, low: pd.Series) -> tuple[str, float] | None:
-        """First stop or target touched by candles after the position opened (stop wins if both in one candle)."""
-        side, stop, target = held["side"], held.get("stop"), held.get("target")
+        """First stop or target touched by candles after the position opened (stop wins if both in one candle).
+
+        With a trailing stop, the stop is ratcheted after each candle from that candle's best price, so it only
+        applies from the next candle on (no using a candle's high to save a trade on the same candle's low)."""
+        side, target = held["side"], held.get("target")
+        stop0 = held.get("stop0", held.get("stop"))
+        stop = stop0
+        atr_ref = held.get("atr")
+        if not atr_ref and stop0 is not None and self.stop_atr > 0:
+            atr_ref = abs(held["entry"] - stop0) / self.stop_atr
+        trailing = self.trail_atr > 0 and bool(atr_ref)
+        best = held["entry"]
         for ts in high.index:
             if str(ts.date()) <= held["opened"]:
                 continue
@@ -112,9 +123,16 @@ class Book:
             stop_hit = stop is not None and ((lo <= stop) if side == 1 else (hi >= stop))
             take_hit = target is not None and ((hi >= target) if side == 1 else (lo <= target))
             if stop_hit:
-                return "stop", stop
+                return ("trail_stop" if trailing and stop != stop0 else "stop"), stop
             if take_hit:
                 return "target", target
+            if trailing:
+                best = max(best, hi) if side == 1 else min(best, lo)
+                cand = best - side * self.trail_atr * atr_ref
+                stop = cand if stop is None else (max(stop, cand) if side == 1 else min(stop, cand))
+        if trailing:
+            held["stop0"] = stop0
+            held["stop"] = stop
         return None
 
     def step(self, combo: Combo, close: pd.Series, verdict: str, now: datetime,
@@ -172,8 +190,8 @@ class Book:
             size_usd = self.notional * size
             self.state["realized"] -= size_usd * self.cost / 2
             stop, target = self._levels(desired, price, atr)
-            self.state["positions"][combo.key] = {"side": desired, "entry": price, "opened": day, "stop": stop, "target": target,
-                                                  "notional": size_usd}
+            self.state["positions"][combo.key] = {"side": desired, "entry": price, "opened": day, "stop": stop, "stop0": stop, "target": target,
+                                                  "notional": size_usd, "atr": atr if atr == atr else None}
             self._log({"time": stamp, "book": self.name, "market": combo.market, "rule": combo.rule, "action": "open",
                        "side": desired, "price": price, "notional": round(size_usd, 4), "pnl": "", "gate_verdict": verdict,
                        "note": note or (f"size {size:.2f}" if size < 1 else "")})

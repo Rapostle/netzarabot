@@ -43,6 +43,7 @@ def main() -> int:
     parser.add_argument("--notional", type=float, default=100.0)
     parser.add_argument("--no-layers", action="store_true", help="turn off the choppy-market filter and volatility sizing")
     parser.add_argument("--stop-atr", type=float, default=3.0, help="stop-loss distance in daily ATRs (0 turns it off)")
+    parser.add_argument("--trail-atr", type=float, default=2.0, help="also run a paired book whose stop trails the best price by this many ATRs (0 = off)")
     parser.add_argument("--take-atr", type=float, default=6.0, help="take-profit distance in daily ATRs (0 turns it off)")
     args = parser.parse_args()
     root = Path(args.repo_root)
@@ -59,6 +60,16 @@ def main() -> int:
     combos = [Combo(c, r) for c in closes for r in args.rules]
     layers = None if args.no_layers else Layers()
     books = [Book("gated", "watch", str(out), args.notional, stop_atr=args.stop_atr, take_atr=args.take_atr, layers=layers)]
+    if args.trail_atr > 0:
+        trail_state = out / "coin_paper_gated_trail_state.json"
+        if not trail_state.exists() and (out / "coin_paper_gated_state.json").exists():
+            # Start the trailing book from the same open positions as the main book, so the two are a paired comparison.
+            src = json.loads((out / "coin_paper_gated_state.json").read_text())
+            positions = {k: {**v, "stop0": v.get("stop0", v.get("stop"))} for k, v in src.get("positions", {}).items()}
+            trail_state.write_text(json.dumps({"positions": positions, "last_day": src.get("last_day", {}), "realized": 0.0,
+                                               "closed": 0, "wins": 0, "cooldown": src.get("cooldown", {})}, indent=1))
+        books.append(Book("gated_trail", "watch", str(out), args.notional, stop_atr=args.stop_atr, take_atr=args.take_atr,
+                          layers=layers, trail_atr=args.trail_atr))
     gate = make_gate(out / "coin_gate_cache.json", max(1, len(combos)), now, layers=layers)
     result = run_cycle(books, combos, closes, gate, now, highs, lows)
     for name, lines in result.items():
