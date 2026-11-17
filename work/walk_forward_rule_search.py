@@ -56,6 +56,8 @@ class SearchConfig:
     min_valid_win: float = 0.50
     keep_top: int = 150
     time_features: bool = False  # add trading-session and weekday conditions (real markets)
+    price_action: str = "off"  # off | add (alongside indicator conditions) | only (price-action families only)
+    htf_factor: int = 12  # candles per higher-timeframe block (12 x 5m = 1 hour)
 
 
 def simulate_trades(df: pd.DataFrame, cfg: SearchConfig) -> pd.DataFrame:
@@ -159,6 +161,10 @@ def run_protocol(df: pd.DataFrame, cfg: SearchConfig) -> tuple[pd.DataFrame, int
         return pd.DataFrame(), 0
     trades = simulate_trades(df, cfg)
     conditions = condition_frame(df).astype(str)
+    if cfg.price_action != "off":
+        import price_action_features as pa
+        pa_frame = pa.price_action_conditions(df, cfg.htf_factor).astype(str)
+        conditions = pa_frame if cfg.price_action == "only" else pd.concat([conditions, pa_frame], axis=1)
     if cfg.time_features:
         stamps = pd.to_datetime(df["timestamp"], utc=True)
         hour = stamps.dt.hour
@@ -251,9 +257,11 @@ def main() -> int:
     parser.add_argument("--sl-slippage", type=float, default=SearchConfig.sl_slippage)
     parser.add_argument("--cost-map", default="", help="per-symbol costs, e.g. frxEURUSD=0.0003,cryBTCUSD=0.0015 (others use --cost)")
     parser.add_argument("--time-features", action="store_true", help="also search trading-session and weekday conditions (real markets)")
+    parser.add_argument("--price-action", choices=["off", "add", "only"], default="off", help="search trendline, structure, candle, fair-value-gap, order-block and higher-timeframe conditions")
+    parser.add_argument("--htf-factor", type=int, default=12, help="candles per higher-timeframe block")
     parser.add_argument("--tag", default="", help="suffix for the output file names, e.g. markets")
     args = parser.parse_args()
-    cfg = SearchConfig(cost=args.cost, sl_slippage=args.sl_slippage, time_features=args.time_features)
+    cfg = SearchConfig(cost=args.cost, sl_slippage=args.sl_slippage, time_features=args.time_features, price_action=args.price_action, htf_factor=args.htf_factor)
     tag = f"_{args.tag}" if args.tag else ""
     cost_map = {}
     for part in filter(None, (item.strip() for item in args.cost_map.split(","))):
@@ -321,6 +329,7 @@ def main() -> int:
         "- A rule only counts if it worked on the train period (first half), then the validation quarter, then the final test quarter, in that order.",
         "- 'Chance of doing this well by luck' near 0.05 or lower would be real evidence; 0.20 or higher means the search found nothing better than noise.",
         "- Passing rules are candidates for PAPER trading only. They must still earn their record on live candles.",
+        f"- Price-action families searched: {cfg.price_action}.",
         "- Session and weekday conditions were included in the search." if cfg.time_features else "- Session and weekday conditions were not searched.",
     ]
     (out_dir / f"walkforward_report{tag}.md").write_text("\n".join(report) + "\n")
