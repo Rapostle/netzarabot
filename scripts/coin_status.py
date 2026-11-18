@@ -15,6 +15,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 
+# every way a position can end is a close: a signal change, a stop, a trailing stop or a target
+CLOSE_ACTIONS = ("close", "stop", "trail_stop", "target")
+
+
 def compute(state: dict, journal_rows: list[list[str]], prices: dict[str, float], default_notional: float = 100.0, cost_round_trip: float = 0.002) -> dict:
     coins: dict[str, dict] = {}
 
@@ -24,7 +28,7 @@ def compute(state: dict, journal_rows: list[list[str]], prices: dict[str, float]
     for r in journal_rows:
         if len(r) > 8 and r[4] == "open" and r[7] not in ("", "nan"):
             slot(r[2])["entry_costs"] += float(r[7]) * cost_round_trip / 2   # paid when the position was opened
-        if len(r) > 8 and r[4] == "close" and r[8] not in ("", "nan"):
+        if len(r) > 8 and r[4] != "open" and r[4] in CLOSE_ACTIONS and r[8] not in ("", "nan"):
             s, p = slot(r[2]), float(r[8])
             s["realised"] += p
             s["closed"] += 1
@@ -73,7 +77,7 @@ def main() -> int:
     from coinbot.paper import closed_only
     now = datetime.now(timezone.utc)
     prices = {}
-    for coin in sorted({k.split("|")[0] for k in state.get("positions", {})} | {r[2] for r in rows if len(r) > 4 and r[4] in ("open", "close")}):
+    for coin in sorted({k.split("|")[0] for k in state.get("positions", {})} | {r[2] for r in rows if len(r) > 4 and (r[4] == "open" or r[4] in CLOSE_ACTIONS)}):
         try:
             prices[coin] = float(closed_only(fetch_ohlc(coin, cache_dir=str(Path(args.repo_root) / "checker_cache"))["close"], now).iloc[-1])
         except Exception as exc:

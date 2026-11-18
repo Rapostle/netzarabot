@@ -33,6 +33,17 @@ class CoinStatusTests(unittest.TestCase):
         self.assertAlmostEqual(r["total"]["realised_net"], 0.2 - 0.2)
         self.assertIn("Net if everything closed now", cs.render(r, "now"))
 
+    def test_stops_and_targets_count_as_closes(self):
+        rows = [["time", "book", "market", "rule", "action", "side", "price", "notional", "pnl", "gate_verdict"],
+                ["t", "b", "SOL", "a", "trail_stop", "-1", "1", "100", "1.5", "x"],
+                ["t", "b", "SOL", "b", "stop", "-1", "1", "100", "-2.0", "x"],
+                ["t", "b", "SOL", "c", "target", "-1", "1", "100", "3.0", "x"],
+                ["t", "b", "SOL", "d", "close", "-1", "1", "100", "0.5", "x"]]
+        r = cs.compute({"positions": {}}, rows, {})
+        self.assertEqual(r["total"]["closed"], 4)
+        self.assertEqual(r["total"]["wins"], 3)
+        self.assertAlmostEqual(r["total"]["realised"], 3.0)
+
     def test_missing_price_counts_zero(self):
         r = cs.compute(STATE, ROWS, {"BTC": 90.0})
         self.assertEqual(r["coins"]["BNB"]["unrealised"], 0.0)
