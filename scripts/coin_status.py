@@ -67,12 +67,15 @@ def render(res: dict, as_of: str) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("--repo-root", default=".")
-    parser.add_argument("--book", default="gated", help="gated (stop and target) or gated_trail (trailing stop)")
+    parser.add_argument("--book", default="gated", help="gated (stop and target), gated_trail (trailing stop) or gated_lock (profit ladder and rotation)")
     args = parser.parse_args()
     out = Path(args.repo_root) / "outputs"
     state = json.loads((out / f"coin_paper_{args.book}_state.json").read_text())
-    with (out / f"coin_paper_{args.book}_journal.csv").open() as h:
-        rows = list(csv.reader(h))
+    journal = out / f"coin_paper_{args.book}_journal.csv"
+    rows = []
+    if journal.exists():  # a new book has no journal until its first open or close
+        with journal.open() as h:
+            rows = list(csv.reader(h))
     from checker.data import fetch_ohlc
     from coinbot.paper import closed_only
     now = datetime.now(timezone.utc)
