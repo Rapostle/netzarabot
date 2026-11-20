@@ -58,19 +58,24 @@ def atr14(high: pd.Series, low: pd.Series, close: pd.Series) -> float:
 
 class Book:
     def __init__(self, name: str, mode: str, directory: str, notional: float = 100.0, cost_round_trip: float = 0.002,
-                 stop_atr: float = 3.0, take_atr: float = 6.0, layers: "lay.Layers | None" = None, trail_atr: float = 0.0):
+                 stop_atr: float = 3.0, take_atr: float = 6.0, layers: "lay.Layers | None" = None, trail_atr: float = 0.0,
+                 lock_first: float = 0.0, lock_gap: float = 0.05, lock_step: float = 0.55, rotate: bool = False):
         if mode not in GATE_MODES:
             raise ValueError(f"gate mode must be one of {GATE_MODES}")
         self.name, self.mode, self.notional, self.cost = name, mode, float(notional), float(cost_round_trip)
         self.stop_atr, self.take_atr = float(stop_atr), float(take_atr)
         self.trail_atr = float(trail_atr)  # >0: the stop follows the best price by this many ATRs and never loosens
+        # Profit ladder: once a trade has been up lock_first ATRs, a floor sits lock_gap ATRs under that level; each further
+        # lock_step ATRs raises the floor one rung (0.85 -> floor 0.80, 1.40 -> floor 1.35, ...). The floor only ever rises.
+        self.lock_first, self.lock_gap, self.lock_step = float(lock_first), float(lock_gap), float(lock_step)
+        self.rotate = bool(rotate)  # after a profit is banked on a coin, that coin takes no NEW entry until another coin has its turn
         self.layers = layers
         self.dir = Path(directory)
         self.dir.mkdir(parents=True, exist_ok=True)
         self.state_path = self.dir / f"coin_paper_{name}_state.json"
         self.journal_path = self.dir / f"coin_paper_{name}_journal.csv"
         self.state = json.loads(self.state_path.read_text()) if self.state_path.exists() else {}
-        for key, default in (("positions", {}), ("last_day", {}), ("realized", 0.0), ("closed", 0), ("wins", 0), ("cooldown", {})):
+        for key, default in (("positions", {}), ("last_day", {}), ("realized", 0.0), ("closed", 0), ("wins", 0), ("cooldown", {}), ("rest_coin", None), ("rest_day", None)):
             self.state.setdefault(key, default)
 
     def _save(self) -> None:
@@ -115,25 +120,49 @@ class Book:
         if not atr_ref and stop0 is not None and self.stop_atr > 0:
             atr_ref = abs(held["entry"] - stop0) / self.stop_atr
         trailing = self.trail_atr > 0 and bool(atr_ref)
+        locking = self.lock_first > 0 and bool(atr_ref)
+        lock_from = held.get("lock_from", "")
+        lstop = None
         best = held["entry"]
         for ts in high.index:
             if str(ts.date()) <= held["opened"]:
                 continue
             hi, lo = float(high[ts]), float(low[ts])
-            stop_hit = stop is not None and ((lo <= stop) if side == 1 else (hi >= stop))
+            eff, kind = stop, "stop"
+            if locking and lstop is not None and str(ts.date()) > lock_from:
+                if eff is None or ((lstop > eff) if side == 1 else (lstop < eff)):
+                    eff, kind = lstop, "lock_stop"
+            stop_hit = eff is not None and ((lo <= eff) if side == 1 else (hi >= eff))
             take_hit = target is not None and ((hi >= target) if side == 1 else (lo <= target))
             if stop_hit:
-                return ("trail_stop" if trailing and stop != stop0 else "stop"), stop
+                if kind == "stop" and trailing and stop != stop0:
+                    kind = "trail_stop"
+                return kind, eff
             if take_hit:
                 return "target", target
             if trailing:
                 best = max(best, hi) if side == 1 else min(best, lo)
                 cand = best - side * self.trail_atr * atr_ref
                 stop = cand if stop is None else (max(stop, cand) if side == 1 else min(stop, cand))
+            if locking:
+                best = max(best, hi) if side == 1 else min(best, lo)
+                fav = side * (best - held["entry"]) / atr_ref
+                if fav >= self.lock_first:
+                    rung = int((fav - self.lock_first) / self.lock_step + 1e-9)
+                    floor = self.lock_first + rung * self.lock_step - self.lock_gap
+                    cand = held["entry"] + side * floor * atr_ref
+                    lstop = cand if lstop is None else (max(lstop, cand) if side == 1 else min(lstop, cand))
         if trailing:
             held["stop0"] = stop0
             held["stop"] = stop
+        if locking:
+            held["lstop"] = lstop
         return None
+
+    def _resting(self, market: str, day: str) -> bool:
+        if not self.rotate or self.state.get("rest_coin") != market or not self.state.get("rest_day"):
+            return False
+        return (pd.Timestamp(day) - pd.Timestamp(self.state["rest_day"])).days < 7  # a rest never lasts more than a week
 
     def step(self, combo: Combo, close: pd.Series, verdict: str, now: datetime,
              high: pd.Series | None = None, low: pd.Series | None = None) -> str:
@@ -166,7 +195,9 @@ class Book:
             hit = self._hit(held, high, low)
             if hit:
                 kind, level = hit
-                self._close(combo, held, float(level), kind, stamp, verdict)
+                pnl = self._close(combo, held, float(level), kind, stamp, verdict)
+                if self.rotate and kind in ("lock_stop", "target") and pnl > 0:
+                    self.state["rest_coin"], self.state["rest_day"] = combo.market, day
                 self.state["cooldown"][combo.key] = held["side"]  # no re-entry on the same side until the signal changes
                 self._save()
                 return f"{kind} hit at {level:.4f}, closed"
@@ -178,9 +209,11 @@ class Book:
                 cooling = True
             else:
                 del self.state["cooldown"][combo.key]
-        desired = signal if (allowed and not cooling) else 0
+        resting = (not held) and self._resting(combo.market, day)
+        desired = signal if (allowed and not cooling and not resting) else 0
         current = held["side"] if held else 0
-        note = "gate blocked" if (not allowed and signal != 0) else ("cooling off after stop or target" if cooling else "")
+        note = "gate blocked" if (not allowed and signal != 0) else ("cooling off after stop or target" if cooling else
+                                                                    ("resting: another coin's turn" if resting and signal != 0 else ""))
         if desired == current:
             self._save()
             return ("hold" if current else "flat") + (f" ({note})" if note else "")
@@ -189,6 +222,8 @@ class Book:
         if desired != 0:
             size_usd = self.notional * size
             self.state["realized"] -= size_usd * self.cost / 2
+            if self.rotate and self.state.get("rest_coin") not in (None, combo.market):
+                self.state["rest_coin"] = None  # another coin has taken its turn
             stop, target = self._levels(desired, price, atr)
             self.state["positions"][combo.key] = {"side": desired, "entry": price, "opened": day, "stop": stop, "stop0": stop, "target": target,
                                                   "notional": size_usd, "atr": atr if atr == atr else None}

@@ -63,6 +63,8 @@ def main() -> int:
     parser.add_argument("--no-layers", action="store_true", help="turn off the choppy-market filter and volatility sizing")
     parser.add_argument("--stop-atr", type=float, default=1.0, help="stop-loss distance in daily ATRs (0 turns it off)")
     parser.add_argument("--trail-atr", type=float, default=1.0, help="also run a paired book whose stop trails the best price by this many ATRs (0 = off)")
+    parser.add_argument("--lock-atr", type=float, default=0.85, help="profit ladder: first rung in ATRs (0 = no ladder book); floor sits 0.05 ATR under each rung")
+    parser.add_argument("--lock-step", type=float, default=0.55, help="ATRs between ladder rungs (0.85, 1.40, 1.95, ...)")
     parser.add_argument("--take-atr", type=float, default=6.0, help="take-profit distance in daily ATRs (0 turns it off)")
     args = parser.parse_args()
     root = Path(args.repo_root)
@@ -92,6 +94,17 @@ def main() -> int:
                                                "closed": 0, "wins": 0, "cooldown": src.get("cooldown", {})}, indent=1))
         books.append(Book("gated_trail", "watch", str(out), args.notional, stop_atr=args.stop_atr, take_atr=args.take_atr,
                           layers=layers, trail_atr=args.trail_atr))
+    if args.lock_atr > 0:
+        lock_state = out / "coin_paper_gated_lock_state.json"
+        if not lock_state.exists() and (out / "coin_paper_gated_state.json").exists():
+            # Same open positions as the main book; the ladder only acts on candles from today on, so nothing is back-filled.
+            src = json.loads((out / "coin_paper_gated_state.json").read_text())
+            today = str(now.date())
+            positions = {k: {**v, "lock_from": today} for k, v in src.get("positions", {}).items()}
+            lock_state.write_text(json.dumps({"positions": positions, "last_day": src.get("last_day", {}), "realized": 0.0,
+                                              "closed": 0, "wins": 0, "cooldown": src.get("cooldown", {})}, indent=1))
+        books.append(Book("gated_lock", "watch", str(out), args.notional, stop_atr=args.stop_atr, take_atr=args.take_atr,
+                          layers=layers, lock_first=args.lock_atr, lock_step=args.lock_step, rotate=True))
     gate = make_gate(out / "coin_gate_cache.json", max(1, len(combos)), now, layers=layers)
     result = run_cycle(books, combos, closes, gate, now, highs, lows)
     for name, lines in result.items():

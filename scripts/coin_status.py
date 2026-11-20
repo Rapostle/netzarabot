@@ -16,7 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 
 # every way a position can end is a close: a signal change, a stop, a trailing stop or a target
-CLOSE_ACTIONS = ("close", "stop", "trail_stop", "target")
+CLOSE_ACTIONS = ("close", "stop", "trail_stop", "lock_stop", "target")
 
 
 def compute(state: dict, journal_rows: list[list[str]], prices: dict[str, float], default_notional: float = 100.0, cost_round_trip: float = 0.002) -> dict:

@@ -226,3 +226,64 @@ class TrailingStopTests(unittest.TestCase):
         held = {"side": 1, "entry": 100.0, "opened": "2026-03-01", "stop": 70.0, "target": 160.0}
         with tempfile.TemporaryDirectory() as d:
             self.assertIsNone(Book("a", "watch", d)._hit(held, high, low))
+
+
+class ProfitLadderTests(unittest.TestCase):
+    def _series(self, rows):
+        idx = pd.date_range("2026-03-02", periods=len(rows), freq="D", tz="UTC")
+        return pd.Series([r[0] for r in rows], index=idx), pd.Series([r[1] for r in rows], index=idx)
+
+    def _held(self, side=1, **extra):
+        entry = 100.0
+        return {"side": side, "entry": entry, "opened": "2026-03-01", "stop": entry - side * 10.0, "stop0": entry - side * 10.0,
+                "target": entry + side * 60.0, "atr": 10.0, **extra}
+
+    def _book(self, d, **kw):
+        from coinbot.paper import Book
+        return Book("l", "watch", d, stop_atr=1.0, take_atr=6.0, lock_first=0.85, lock_step=0.55, rotate=True, **kw)
+
+    def test_first_rung_locks_at_080_atr(self):
+        import tempfile
+        high, low = self._series([(110, 100), (109, 107)])   # best +1.0 ATR; next day falls to 107 (+0.7 ATR)
+        with tempfile.TemporaryDirectory() as d:
+            self.assertEqual(self._book(d)._hit(self._held(), high, low), ("lock_stop", 108.0))   # 0.80 ATR above entry
+
+    def test_second_rung_raises_the_floor_to_135_atr(self):
+        import tempfile
+        high, low = self._series([(115, 100), (114, 113)])   # best +1.5 ATR -> second rung, floor 1.35 ATR = 113.5
+        with tempfile.TemporaryDirectory() as d:
+            self.assertEqual(self._book(d)._hit(self._held(), high, low), ("lock_stop", 113.5))
+
+    def test_below_first_rung_nothing_is_locked(self):
+        import tempfile
+        high, low = self._series([(108, 100), (107, 95)])    # best only +0.8 ATR, then back to a small loss
+        with tempfile.TemporaryDirectory() as d:
+            self.assertIsNone(self._book(d)._hit(self._held(), high, low))
+
+    def test_short_mirrors(self):
+        import tempfile
+        high, low = self._series([(100, 90), (93, 91)])      # best -1.0 ATR; rebounds to 93 -> floor is 92 (0.80 ATR profit)
+        with tempfile.TemporaryDirectory() as d:
+            self.assertEqual(self._book(d)._hit(self._held(-1), high, low), ("lock_stop", 92.0))
+
+    def test_same_candle_cannot_save_itself(self):
+        import tempfile
+        high, low = self._series([(112, 100)])
+        with tempfile.TemporaryDirectory() as d:
+            self.assertIsNone(self._book(d)._hit(self._held(), high, low))
+
+    def test_old_candles_are_not_back_filled(self):
+        import tempfile
+        high, low = self._series([(110, 100), (109, 107), (109, 109)])   # the dip to 107 is on 3 Mar, before lock_from
+        with tempfile.TemporaryDirectory() as d:
+            self.assertIsNone(self._book(d)._hit(self._held(lock_from="2026-03-03"), high, low))
+            self.assertEqual(self._book(d)._hit(self._held(), high, low), ("lock_stop", 108.0))
+
+    def test_rest_lasts_until_another_coin_or_a_week(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            b = self._book(d)
+            b.state["rest_coin"], b.state["rest_day"] = "BTC", "2026-03-10"
+            self.assertTrue(b._resting("BTC", "2026-03-12"))
+            self.assertFalse(b._resting("ETH", "2026-03-12"))
+            self.assertFalse(b._resting("BTC", "2026-03-18"))   # a week later it may trade again
