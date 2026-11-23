@@ -19,6 +19,8 @@ class SummaryTests(unittest.TestCase):
             self.assertIn(r, text)
         self.assertIn("break-even", text)
         self.assertIn("Simply holding", text)
+        self.assertIn("Inconclusive", text)
+        self.assertIn("for 40 tries", summary.format_summary("T", daily, intra, tries=40))
         self.assertIn("not financial advice", text.lower())
         self.assertNotIn("guaranteed", text.lower())
 
