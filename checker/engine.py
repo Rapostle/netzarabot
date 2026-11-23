@@ -53,6 +53,8 @@ class CheckResult:
     verdict: str
     notes: list[str] = field(default_factory=list)
     layers: str = "plain"
+    gross_return_pct: float = 0.0          # same rule, same market, at zero cost
+    break_even_cost: float | None = None   # round-trip cost at which total return reaches zero; None = no gross profit or no trades
 
     def as_dict(self) -> dict:
         return asdict(self)
@@ -67,6 +69,21 @@ def _returns(close: pd.Series, rule: str, cost_one_way: float, hold_cost: float,
 def _count_trades(close: pd.Series, rule: str, layers: "lay.Layers | None" = None) -> int:
     position = lay.filtered_signal(close, dtt.RULES[rule](close), layers).shift(1).fillna(0.0)
     return int(position.diff().abs().fillna(position.abs()).sum() // 2 + (1 if position.iloc[-1] != 0 else 0))
+
+
+def break_even_round_trip(close: pd.Series, rule: str, cost_round_trip: float, hold_cost: float,
+                          layers: "lay.Layers | None", net: pd.Series) -> tuple[float, float | None]:
+    """Gross total return (%) and the round-trip cost at which the total return falls to zero.
+    Costs act almost linearly on log growth, so one probe at a known cost is enough."""
+    gross_series = _returns(close, rule, 0.0, 0.0, layers)
+    gross = float((1 + gross_series).prod() - 1)
+    probe = cost_round_trip if cost_round_trip > 0 else 0.002
+    probe_net = net if cost_round_trip > 0 else _returns(close, rule, probe / 2, hold_cost, layers)
+    if gross <= 0 or probe_net.empty:
+        return gross * 100, None
+    lg, ln = np.log1p(gross), np.log1p(max(float((1 + probe_net).prod() - 1), -0.999999))
+    drag = (lg - ln) / probe
+    return gross * 100, (float(lg / drag) if drag > 1e-12 else None)
 
 
 def run_check(close: pd.Series, rule: str, market: str = "", cost_round_trip: float = 0.002,
@@ -101,6 +118,7 @@ def run_check(close: pd.Series, rule: str, market: str = "", cost_round_trip: fl
     hold_ret = float(close.iloc[-1] / close.iloc[0] - 1) * 100
     total_ret = float((1 + net).prod() - 1) * 100
     trades = _count_trades(close, rule, layers)
+    gross_ret, break_even = break_even_round_trip(close, rule, cost_round_trip, hold_cost, layers, net)
     persistent = first > 0 and second > 0 and real > 0
 
     if null_runs < MIN_NULL_RUNS_FOR_PASS:
@@ -125,4 +143,5 @@ def run_check(close: pd.Series, rule: str, market: str = "", cost_round_trip: fl
         verdict = VERDICT_NONE
     return CheckResult(rule, market, days, round(years, 1), trades, round(real, 2), round(first, 2), round(second, 2),
                        round(total_ret, 1), round(hold_ret, 1), round(dtt.sharpe(close.pct_change().fillna(0.0), ppy), 2),
-                       round(p, 4), round(p_adj, 4), tests_counted, null_runs, cost_round_trip, verdict, notes, layers.label() if layers else "plain")
+                       round(p, 4), round(p_adj, 4), tests_counted, null_runs, cost_round_trip, verdict, notes, layers.label() if layers else "plain",
+                       round(gross_ret, 1), None if break_even is None else round(break_even, 5))

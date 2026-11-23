@@ -69,6 +69,19 @@ class EngineTests(unittest.TestCase):
         dear = engine.run_check(trending(5, drift=0.0012), "momentum_20", null_runs=200, cost_round_trip=0.02)
         self.assertGreater(cheap.net_sharpe, dear.net_sharpe)
 
+    def test_gross_exceeds_net_and_break_even_is_consistent(self):
+        res = engine.run_check(trending(5, drift=0.0012), "momentum_20", null_runs=50, cost_round_trip=0.002)
+        self.assertGreater(res.gross_return_pct, res.total_return_pct)
+        self.assertIsNotNone(res.break_even_cost)
+        self.assertGreater(res.break_even_cost, 0.002)
+        at_be = engine.run_check(trending(5, drift=0.0012), "momentum_20", null_runs=50, cost_round_trip=res.break_even_cost)
+        self.assertLess(abs(at_be.total_return_pct), max(5.0, abs(res.gross_return_pct) * 0.1))
+
+    def test_no_gross_profit_means_no_break_even(self):
+        res = engine.run_check(noise(1), "momentum_20", null_runs=20)
+        self.assertLess(res.gross_return_pct, 0)
+        self.assertIsNone(res.break_even_cost)
+
     def test_same_inputs_give_same_answer(self):
         a = engine.run_check(noise(7), "breakout_20", null_runs=200).as_dict()
         b = engine.run_check(noise(7), "breakout_20", null_runs=200).as_dict()

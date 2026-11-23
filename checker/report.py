@@ -32,6 +32,16 @@ def luck_sentence(p: float, null_runs: int) -> str:
     return f"In {null_runs:,} scrambled copies of this market, {p:.1%} did at least as well. That is the luck chance."
 
 
+def cost_sentence(res: CheckResult) -> str:
+    if res.break_even_cost is None:
+        if res.gross_return_pct <= 0:
+            return f"Even before costs it made {res.gross_return_pct:+.1f}%, so costs are not the problem."
+        return f"Before costs it made {res.gross_return_pct:+.1f}%."
+    taken = res.gross_return_pct - res.total_return_pct
+    return (f"Before costs it made {res.gross_return_pct:+.1f}%; costs took {taken:.1f} points. "
+            f"It stops making money at about {res.break_even_cost:.2%} per round trip.")
+
+
 def format_report(res: CheckResult) -> str:
     title = f"Check: {RULE_TEXT.get(res.rule, res.rule)} on {res.market or 'this market'}"
     lines = [title, ""]
@@ -43,6 +53,7 @@ def format_report(res: CheckResult) -> str:
         "",
         f"History used: {res.years} years ({res.days:,} daily candles), {res.trades} trades.",
         f"Result after costs: {res.total_return_pct:+.1f}% in total. Simply holding earned {res.buy_hold_return_pct:+.1f}%.",
+        cost_sentence(res),
         f"First half of history: Sharpe {res.first_half_sharpe:+.2f}. Second half: {res.second_half_sharpe:+.2f}. (Above about 0.5 is decent.)",
         luck_sentence(res.p_luck, res.null_runs),
     ]
