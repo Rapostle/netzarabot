@@ -1,6 +1,7 @@
 """Turns an engine result into the plain-language Telegram message."""
 from __future__ import annotations
 
+from .intraday import IntradayResult, V_NONE, V_MAYBE, V_PASS, V_REFUSED
 from .engine import CheckResult, VERDICT_NONE, VERDICT_MAYBE, VERDICT_PASS, VERDICT_REFUSED
 
 DISCLAIMER = "Past data cannot promise future profit. This is not financial advice and not a signal."
@@ -66,3 +67,35 @@ def format_report(res: CheckResult) -> str:
         lines += ["", "Cautions:"] + [f"- {n}" for n in res.notes]
     lines += ["", DISCLAIMER]
     return "\n".join(lines)
+
+
+INTRADAY_TEXT = {
+    "judas": "on days after a 3-day swing, wait for the early-day fake push, then trade the reversal (hourly candles)",
+    "wr": "at the 07:00 London open, fade a break of the Asian range when Williams %R is stretched (hourly candles)",
+}
+_INTRADAY_LINE = {
+    V_NONE: "NO EVIDENCE OF AN EDGE. It does no better than the same rule on scrambled prices.",
+    V_MAYBE: "INCONCLUSIVE. Some signs, but not strong enough to trust.",
+    V_PASS: "PASSES THE TESTS. It beat scrambled prices and survived costs. That is not a promise of profit.",
+    V_REFUSED: "NOT ENOUGH TRADES TO JUDGE.",
+}
+
+
+def format_intraday_report(res: IntradayResult) -> str:
+    lines = [f"Check: {INTRADAY_TEXT.get(res.rule, res.rule)} on {res.market or 'this market'}", "", _INTRADAY_LINE.get(res.verdict, res.verdict)]
+    if res.verdict == V_REFUSED:
+        return "\n".join(lines + [""] + res.notes + ["", DISCLAIMER])
+    lines += [
+        "",
+        f"{res.trades} trades, {res.win_rate:.0%} won.",
+        f"Before costs: {res.gross_r:+.3f} R per trade (R = the distance to the stop). After {res.cost_round_trip:.2%} costs: {res.net_r:+.3f} R.",
+    ]
+    if res.break_even_cost is not None:
+        lines.append(f"It stops making money at about {res.break_even_cost:.3%} of price per round trip.")
+    lines += [
+        f"First half: {res.first_half_r:+.3f} R. Second half: {res.second_half_r:+.3f} R.",
+        f"The same rule on scrambled days averaged {res.shuffled_avg_r:+.3f} R. In {res.null_runs:,} scrambled copies, {res.p_luck:.1%} did at least as well as the real result.",
+    ]
+    if res.notes:
+        lines += ["", "Cautions:"] + [f"- {n}" for n in res.notes]
+    return "\n".join(lines + ["", DISCLAIMER])
