@@ -101,6 +101,16 @@ def load(symbol: str, directory: Path = DATA_DIR) -> np.ndarray | None:
     return pd.read_csv(path)["rate"].to_numpy(float)
 
 
+def load_years(symbol: str, directory: Path = DATA_DIR) -> pd.Series | None:
+    """Funding received per calendar year (sum of the payments, before costs), as a share of notional."""
+    path = directory / f"{symbol}_funding.csv"
+    if not path.exists():
+        return None
+    df = pd.read_csv(path)
+    year = pd.to_datetime(df["time_ms"], unit="ms", utc=True).dt.year
+    return df.groupby(year)["rate"].sum()
+
+
 def always_on(rates: np.ndarray, round_trip: float = ROUND_TRIP) -> np.ndarray:
     """Per-payment result on 1 unit of notional; the single round trip is taken off the first payment."""
     out = rates.copy()
@@ -163,6 +173,13 @@ def main() -> int:
         luck = (np.sum(np.array(null) >= sw["annual"]) + 1) / (len(null) + 1)
         print(f"  switch on shuffled payments: average {np.mean(null) * 100:+.1f}% a year | chance of matching the real switch result by luck: {luck:.2f}\n")
         pooled_on.append(on["annual"]); pooled_sw.append(sw["annual"])
+    print("Funding received per calendar year, before costs, as a share of notional (a part year shows less):")
+    table = {s: load_years(s) for s in data}
+    years = sorted({y for t in table.values() if t is not None for y in t.index})
+    print("  year  " + "  ".join(f"{s[:-4]:>7}" for s in table))
+    for y in years:
+        print(f"  {y}  " + "  ".join(f"{(table[s].get(y, float('nan')) * 100):+6.1f}%" for s in table))
+    print()
     if pooled_on:
         print(f"Average over coins: always_on {np.mean(pooled_on) * 100:+.1f}% a year, switch {np.mean(pooled_sw) * 100:+.1f}% a year (on notional).")
     print("Read it as income with risk, not as a prediction edge: judge the worst drawdown and worst 30 days, and remember margin, liquidation and exchange risk are not in these numbers.")
