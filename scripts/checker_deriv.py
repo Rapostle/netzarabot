@@ -63,6 +63,9 @@ def main() -> int:
         if close is None:
             continue
         res = [engine.run_check(close, r, market=s, cost_round_trip=a.cost, null_runs=a.null_runs, tests_counted=counted) for r in engine.RULE_NAMES]
+        if all(r.verdict == engine.VERDICT_REFUSED for r in res):
+            print(f"{s}: only {res[0].days} daily candles; at least {engine.MIN_DAYS} are needed, so no verdict.\n")
+            continue
         print(summary.format_summary(s, res, [], tries=counted).split("\n\nA rule only counts")[0], "\n")
         notable += [f"{r.market} {r.rule}: {r.verdict.split(' (')[0]} (luck {r.p_adjusted:.2f})" for r in res
                     if r.verdict not in (engine.VERDICT_NONE, engine.VERDICT_REFUSED)]

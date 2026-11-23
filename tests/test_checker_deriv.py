@@ -39,6 +39,13 @@ class Tests(unittest.TestCase):
             self.assertEqual(len(day), 40)
             self.assertAlmostEqual(float(day.iloc[0]), float(c[287]))
 
+    def test_short_history_prints_one_line(self):
+        with tempfile.TemporaryDirectory() as d:
+            write_daily(Path(d) / "deriv_BOOM500_1d.csv", n=100)
+            r = subprocess.run([sys.executable, str(ROOT / "scripts/checker_deriv.py"), "--data-dir", d, "--null-runs", "5"], capture_output=True, text=True)
+            self.assertIn("BOOM500: only 100 daily candles", r.stdout)
+            self.assertNotIn("momentum_20", r.stdout)
+
     def test_empty_directory_message(self):
         with tempfile.TemporaryDirectory() as d:
             r = subprocess.run([sys.executable, str(ROOT / "scripts/checker_deriv.py"), "--data-dir", d], capture_output=True, text=True)
