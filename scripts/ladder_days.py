@@ -1,8 +1,8 @@
 """Day-by-day view of the coin paper books (pretend money): is a book's profit repeatable, or one market-wide day?
 
     .venv/bin/python scripts/ladder_days.py --repo-root /root/netzarabot [--book gated_lock]
-Read-only: it only reads the journals in outputs/. A day counts as 'market-wide' when at least
-MARKET_WIDE_SHARE of the coins that closed that day closed in profit.
+Read-only: it only reads the journals in outputs/. A day counts as a 'win day' when at least
+MIN_CLOSES trades closed that day and at least WIN_DAY_SHARE of them were profitable.
 """
 from __future__ import annotations
 
@@ -13,8 +13,8 @@ from pathlib import Path
 
 BOOKS = ("gated", "gated_trail", "gated_lock")
 CLOSE_ACTIONS = ("close", "stop", "trail_stop", "lock_stop", "target")
-MARKET_WIDE_SHARE = 0.8
-MIN_COINS = 3
+WIN_DAY_SHARE = 0.8
+MIN_CLOSES = 3
 
 
 def read(path: Path) -> list[dict]:
@@ -34,7 +34,7 @@ def by_day(rows: list[dict]) -> list[dict]:
         wins = sum(1 for _, p in items if p > 0)
         coins = len({m for m, _ in items})
         out.append({"day": d, "closes": len(items), "wins": wins, "coins": coins, "pnl": sum(p for _, p in items),
-                    "market_wide": coins >= MIN_COINS and wins / len(items) >= MARKET_WIDE_SHARE})
+                    "market_wide": len(items) >= MIN_CLOSES and wins / len(items) >= WIN_DAY_SHARE})
     return out
 
 
@@ -43,17 +43,17 @@ def render(name: str, days: list[dict]) -> str:
         return f"=== {name} ===\nno closed trades yet\n"
     lines = [f"=== {name} ==="]
     for d in days:
-        tag = "market-wide win day" if d["market_wide"] and d["pnl"] > 0 else ""
+        tag = "win day" if d["market_wide"] and d["pnl"] > 0 else ""
         lines.append(f"  {d['day']}: {d['closes']} closes ({d['wins']} wins, {d['coins']} coins) ${d['pnl']:+.2f} {tag}".rstrip())
     total = sum(d["pnl"] for d in days)
     quiet = [d for d in days if not (d["market_wide"] and d["pnl"] > 0)]
     quiet_pnl = sum(d["pnl"] for d in quiet)
     lines.append(f"  total ${total:+.2f} over {len(days)} closing days; positive days {sum(1 for d in days if d['pnl'] > 0)}")
-    lines.append(f"  on days that were NOT market-wide wins: {len(quiet)} days, ${quiet_pnl:+.2f}")
+    lines.append(f"  on days that were NOT win days: {len(quiet)} days, ${quiet_pnl:+.2f}")
     if quiet and quiet_pnl > 0 and len(quiet) >= 3:
         lines.append("  It also made money on ordinary days. Keep watching: that is what a repeatable result looks like.")
     else:
-        lines.append("  Without its market-wide days it has not yet made money. Still one event until that changes.")
+        lines.append("  Without its win days it has not yet made money. Still one event until that changes.")
     return "\n".join(lines) + "\n"
 
 

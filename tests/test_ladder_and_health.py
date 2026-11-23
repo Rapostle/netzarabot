@@ -19,9 +19,13 @@ class LadderTests(unittest.TestCase):
         self.assertTrue(days[0]["market_wide"])
         self.assertFalse(days[1]["market_wide"])
         text = L.render("x", days)
-        self.assertIn("market-wide win day", text)
+        self.assertIn("win day", text)
         self.assertIn("2 days, $-1.00", text)
         self.assertIn("Still one event", text)
+
+    def test_a_win_day_on_few_coins_still_counts(self):
+        rows = [row("2026-11-22", "A", 5) for _ in range(6)] + [row("2026-11-23", "A", -2, "stop")]
+        self.assertTrue(L.by_day(rows)[0]["market_wide"])
 
     def test_repeatable_message_needs_three_quiet_positive_days(self):
         rows = [row("2026-11-22", c, 50) for c in "ABCD"] + [row(f"2026-11-{23+i}", "A", 5) for i in range(3)]
