@@ -17,7 +17,7 @@ def write_daily(path: Path, n=900, seed=1):
     rng = np.random.default_rng(seed)
     c = 1000 * np.cumprod(1 + rng.normal(0, 0.01, n))
     ts = pd.date_range("2022-01-01", periods=n, freq="D", tz="UTC")
-    pd.DataFrame({"timestamp": ts.astype("int64") // 10**9, "open": c, "high": c * 1.01, "low": c * 0.99, "close": c, "volume": 0}).to_csv(path, index=False)
+    pd.DataFrame({"timestamp": (ts - pd.Timestamp("1970-01-01", tz="UTC")) // pd.Timedelta("1s"), "open": c, "high": c * 1.01, "low": c * 0.99, "close": c, "volume": 0}).to_csv(path, index=False)
 
 
 class Tests(unittest.TestCase):
@@ -26,6 +26,18 @@ class Tests(unittest.TestCase):
             for name in ("BOOM500", "CRASH300N", "R_75"):
                 write_daily(Path(d) / f"deriv_{name}_1d.csv")
             self.assertEqual(D.find_symbols(Path(d)), ["BOOM500", "CRASH300N"])
+
+    def test_daily_candles_are_built_from_five_minute_files(self):
+        with tempfile.TemporaryDirectory() as d:
+            n = 288 * 40
+            rng = np.random.default_rng(3)
+            c = 1000 * np.cumprod(1 + rng.normal(0, 0.001, n))
+            ts = pd.date_range("2024-01-01", periods=n, freq="5min", tz="UTC")
+            pd.DataFrame({"timestamp": (ts - pd.Timestamp("1970-01-01", tz="UTC")) // pd.Timedelta("1s"), "open": c, "high": c, "low": c, "close": c}).to_csv(Path(d) / "deriv_BOOM500_5m.csv", index=False)
+            self.assertEqual(D.find_symbols(Path(d)), ["BOOM500"])
+            day = D.daily_close(Path(d), "BOOM500")
+            self.assertEqual(len(day), 40)
+            self.assertAlmostEqual(float(day.iloc[0]), float(c[287]))
 
     def test_empty_directory_message(self):
         with tempfile.TemporaryDirectory() as d:
