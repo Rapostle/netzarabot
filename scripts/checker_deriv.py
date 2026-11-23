@@ -12,7 +12,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from checker import engine, summary  # noqa: E402
+from checker import engine, pooled, summary  # noqa: E402
 import daily_trend_test as dtt  # noqa: E402
 import pandas as pd  # noqa: E402
 from trading_bot.data.loader import load_ohlcv_csv  # noqa: E402
@@ -57,18 +57,33 @@ def main() -> int:
         return 1
     counted = len(engine.RULE_NAMES) * len(syms)
     print(f"{len(syms)} indices x {len(engine.RULE_NAMES)} rules = {counted} tries counted. Cost assumed: {a.cost:.2%} per round trip.\n")
-    notable = []
+    notable, closes, short = [], {}, 0
     for s in syms:
         close = daily_close(Path(a.data_dir), s)
         if close is None:
             continue
+        closes[s] = close
         res = [engine.run_check(close, r, market=s, cost_round_trip=a.cost, null_runs=a.null_runs, tests_counted=counted) for r in engine.RULE_NAMES]
         if all(r.verdict == engine.VERDICT_REFUSED for r in res):
             print(f"{s}: only {res[0].days} daily candles; at least {engine.MIN_DAYS} are needed, so no verdict.\n")
+            short += 1
             continue
         print(summary.format_summary(s, res, [], tries=counted).split("\n\nA rule only counts")[0], "\n")
         notable += [f"{r.market} {r.rule}: {r.verdict.split(' (')[0]} (luck {r.p_adjusted:.2f})" for r in res
                     if r.verdict not in (engine.VERDICT_NONE, engine.VERDICT_REFUSED)]
+    if short == len(closes):
+        print("Every index is too short on its own, so each family is bundled: all Boom indices with equal weight, and all Crash indices.")
+        print("A bundle is judged against bundles of scrambled markets. A short history can only ever earn 'inconclusive'.\n")
+        tries = len(engine.RULE_NAMES) * 2
+        for fam in ("BOOM", "CRASH"):
+            fam_closes = {k: c for k, c in closes.items() if k.upper().startswith(fam)}
+            res = [pooled.run_pool_check(fam_closes, r, f"{fam} x{len(fam_closes)}", a.cost, a.null_runs, tests_counted=tries) for r in engine.RULE_NAMES]
+            if all(r.verdict == engine.VERDICT_REFUSED for r in res):
+                print(f"{fam}: not enough markets or days to bundle.\n")
+                continue
+            print(summary.format_summary(f"{fam} bundle ({len(fam_closes)} indices, about {res[0].years} year)", res, [], tries=tries).split("\n\nA rule only counts")[0], "\n")
+            notable += [f"{r.market} {r.rule}: {r.verdict.split(' (')[0]} (luck {r.p_adjusted:.2f})" for r in res
+                        if r.verdict not in (engine.VERDICT_NONE, engine.VERDICT_REFUSED)]
     print("Rules that were not simply 'no evidence': " + ("; ".join(notable) if notable else "none"))
     print("A rule only counts if its corrected luck chance is about 0.05 or below, it holds in both halves, and it still earns after costs.")
     print("Past data cannot promise future profit. This is not financial advice and not a signal.")

@@ -46,6 +46,16 @@ class Tests(unittest.TestCase):
             self.assertIn("BOOM500: only 100 daily candles", r.stdout)
             self.assertNotIn("momentum_20", r.stdout)
 
+    def test_short_indices_fall_back_to_family_bundles(self):
+        with tempfile.TemporaryDirectory() as d:
+            for i, n in enumerate(("BOOM300N", "BOOM500", "BOOM900", "CRASH300N", "CRASH500", "CRASH900")):
+                write_daily(Path(d) / f"deriv_{n}_1d.csv", n=360, seed=i)
+            r = subprocess.run([sys.executable, str(ROOT / "scripts/checker_deriv.py"), "--data-dir", d, "--null-runs", "20"], capture_output=True, text=True)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            self.assertIn("BOOM bundle (3 indices", r.stdout)
+            self.assertIn("CRASH bundle (3 indices", r.stdout)
+            self.assertIn("momentum_20", r.stdout)
+
     def test_empty_directory_message(self):
         with tempfile.TemporaryDirectory() as d:
             r = subprocess.run([sys.executable, str(ROOT / "scripts/checker_deriv.py"), "--data-dir", d], capture_output=True, text=True)
