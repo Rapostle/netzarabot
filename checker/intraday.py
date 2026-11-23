@@ -50,21 +50,41 @@ class IntradayResult:
 
 def run_intraday_check(df: pd.DataFrame, rule: str, market: str = "", cost_round_trip: float = p3.NET_COST,
                        null_runs: int = 200, seed: int = 9) -> IntradayResult:
+    return run_intraday_pool({market or "market": df}, rule, market, cost_round_trip, null_runs, seed)
+
+
+def run_intraday_pool(frames: dict[str, pd.DataFrame], rule: str, market: str = "", cost_round_trip: float = p3.NET_COST,
+                      null_runs: int = 200, seed: int = 9) -> IntradayResult:
+    """One verdict over several coins at once: their trades are pooled, and each shuffled copy
+    scrambles every coin's days and pools again, so the luck test matches the real test."""
     if rule not in INTRADAY_RULES:
         raise ValueError(f"unknown intraday rule {rule!r}; choose from {', '.join(INTRADAY_RULES)}")
-    g = p3.trades(df, rule, 0.0)
-    if len(g) < MIN_TRADES:
-        return IntradayResult(rule, market, len(g), 0, 0, 0, 0, 0, 0, 1.0, 0, cost_round_trip, None, V_REFUSED,
-                              [f"Only {len(g)} trades; at least {MIN_TRADES} are needed."])
-    n = p3.trades(df, rule, cost_round_trip)
+    market = market or "+".join(frames)
+    gs, ns, first, second, pos, used = [], [], [], [], 0, 0
+    for df in frames.values():
+        g = p3.trades(df, rule, 0.0)
+        if len(g) == 0:
+            continue
+        gs.append(g)
+        ns.append(p3.trades(df, rule, cost_round_trip))
+        h = len(g) // 2
+        first.append(g[:h]); second.append(g[h:])
+        pos += g.mean() > 0
+        used += 1
+    total = sum(len(g) for g in gs)
+    if total < MIN_TRADES:
+        return IntradayResult(rule, market, total, 0, 0, 0, 0, 0, 0, 1.0, 0, cost_round_trip, None, V_REFUSED,
+                              [f"Only {total} trades; at least {MIN_TRADES} are needed."])
+    g, n = np.concatenate(gs), np.concatenate(ns)
     gm, nm = float(g.mean()), float(n.mean())
-    h = len(g) // 2
+    f1, f2 = float(np.concatenate(first).mean()), float(np.concatenate(second).mean())
     rng = np.random.default_rng(seed)
     null = []
     for _ in range(null_runs):
-        r = p3.trades(p3.day_shuffle(df, rng), rule, 0.0)
-        if len(r):
-            null.append(float(r.mean()))
+        rs = [p3.trades(p3.day_shuffle(df, rng), rule, 0.0) for df in frames.values()]
+        rs = [x for x in rs if len(x)]
+        if rs:
+            null.append(float(np.concatenate(rs).mean()))
     null_a = np.array(null) if null else np.array([np.nan])
     p = (int(np.nansum(null_a >= gm)) + 1) / (int(np.isfinite(null_a).sum()) + 1)
     drag = gm - nm
@@ -74,13 +94,15 @@ def run_intraday_check(df: pd.DataFrame, rule: str, market: str = "", cost_round
         notes.append(f"Only {null_runs} shuffled copies were used, too few to call a pass.")
     if nm <= 0 < gm:
         notes.append("It makes money before costs and loses after them.")
-    persistent = g[:h].mean() > 0 and g[h:].mean() > 0
-    if p <= PASS_P and persistent and nm > 0 and null_runs >= MIN_NULL_RUNS_FOR_PASS:
+    if len(frames) > 1:
+        notes.append(f"Pooled {used} coins; it made money before costs on {pos} of them.")
+    persistent = f1 > 0 and f2 > 0
+    if p <= PASS_P and persistent and nm > 0 and null_runs >= MIN_NULL_RUNS_FOR_PASS and pos > used / 2:
         verdict = V_PASS
     elif p <= 0.10 and gm > 0:
         verdict = V_MAYBE
     else:
         verdict = V_NONE
-    return IntradayResult(rule, market, len(g), round(gm, 3), round(nm, 3), round(float(g[:h].mean()), 3),
-                          round(float(g[h:].mean()), 3), round(float((g > 0).mean()), 3), round(float(np.nanmean(null_a)), 3),
-                          round(p, 4), null_runs, cost_round_trip, None if break_even is None else round(break_even, 5), verdict, notes)
+    return IntradayResult(rule, market, total, round(gm, 3), round(nm, 3), round(f1, 3), round(f2, 3),
+                          round(float((g > 0).mean()), 3), round(float(np.nanmean(null_a)), 3), round(p, 4), null_runs,
+                          cost_round_trip, None if break_even is None else round(break_even, 5), verdict, notes)

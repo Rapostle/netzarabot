@@ -15,15 +15,22 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--symbols", nargs="+", default=["BTCUSDT", "ETHUSDT"])
     ap.add_argument("--rules", nargs="+", default=list(intraday.INTRADAY_RULES))
+    ap.add_argument("--pool", action="store_true", help="also give one verdict over all the coins together")
     ap.add_argument("--null-runs", type=int, default=200)
     a = ap.parse_args()
+    frames = {}
     for s in a.symbols:
         df = p3.load(s)
         if df is None:
             print(f"{s}: no hourly data in {p3.DATA_DIR}\n")
             continue
+        frames[s] = df
+        if not a.pool:
+            for rule in a.rules:
+                print(report.format_intraday_report(intraday.run_intraday_check(df, rule, s, null_runs=a.null_runs)), "\n")
+    if a.pool and frames:
         for rule in a.rules:
-            print(report.format_intraday_report(intraday.run_intraday_check(df, rule, s, null_runs=a.null_runs)), "\n")
+            print(report.format_intraday_report(intraday.run_intraday_pool(frames, rule, "+".join(frames), null_runs=a.null_runs)), "\n")
     return 0
 
 

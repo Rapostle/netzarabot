@@ -42,3 +42,17 @@ class IntradayTests(unittest.TestCase):
         a = intraday.run_intraday_check(walk(), "wr", null_runs=20).as_dict()
         b = intraday.run_intraday_check(walk(), "wr", null_runs=20).as_dict()
         self.assertEqual(a, b)
+
+
+class PoolTests(unittest.TestCase):
+    def test_pool_reaches_a_verdict_where_one_coin_cannot(self):
+        frames = {"A": walk(80, 1), "B": walk(80, 2), "C": walk(80, 3), "D": walk(80, 4)}
+        one = intraday.run_intraday_check(frames["A"], "judas", "A", null_runs=5)
+        pooled = intraday.run_intraday_pool(frames, "judas", null_runs=10)
+        self.assertGreater(pooled.trades, one.trades)
+
+    def test_pool_trades_equal_sum_of_coins(self):
+        frames = {"A": walk(300, 1), "B": walk(300, 2)}
+        res = intraday.run_intraday_pool(frames, "wr", null_runs=5)
+        parts = sum(intraday.run_intraday_check(f, "wr", k, null_runs=5).trades for k, f in frames.items())
+        self.assertEqual(res.trades, parts)
