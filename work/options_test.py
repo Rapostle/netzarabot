@@ -18,6 +18,7 @@ and N the BEST rule is compared with the best rule of each shuffle, so trying ma
 
     .venv/bin/python work/options_test.py --data-dir outputs/history --timeframe 5m --null-runs 60
     .venv/bin/python work/options_test.py --digits BOOM500 CRASH500 R_75       # digit contracts, needs the 'websockets' package
+    .venv/bin/python work/options_test.py --pair CRASH500 2 3                  # one digit pair chosen in advance, on fresh ticks
 """
 from __future__ import annotations
 
@@ -279,6 +280,24 @@ def run_digits(symbols: list[str]) -> None:
     print("\nA digit contract is priced at the fair 1-in-10 or 1-in-2 odds minus the house cut. It can only be beaten if the digits are NOT random; p values far above 0.05 mean they look random.")
 
 
+def pair_report(digits: np.ndarray, prev: int, nxt: int) -> dict:
+    """ONE pre-chosen pair (no search): how often does `nxt` follow `prev`, against the fair 10%? One-sided, single test."""
+    d = np.asarray(digits, int)
+    after = d[1:][d[:-1] == prev]
+    n = len(after)
+    hits = int((after == nxt).sum())
+    rate = hits / n if n else float("nan")
+    z = (rate - 0.1) / math.sqrt(0.1 * 0.9 / n) if n else float("nan")
+    return {"n": n, "hits": hits, "rate": rate, "z": z, "p_one_sided": 0.5 * math.erfc(z / math.sqrt(2)) if n else float("nan")}
+
+
+def run_pair(symbol: str, prev: int, nxt: int) -> None:
+    url = os.environ.get("DERIV_WS_URL") or "wss://api.derivws.com/trading/v1/options/ws/public"
+    r = pair_report(last_digits(asyncio.run(_ticks(url, symbol))), prev, nxt)
+    print(f"{symbol}: after a {prev}, the next digit was {nxt} in {r['hits']} of {r['n']} cases = {r['rate']:.3f} (fair 0.100) | z {r['z']:+.1f} | chance of this by luck (one pair, chosen in advance) {r['p_one_sided']:.3f}")
+    print("A 'matches' contract on one digit pays about 9.5x the stake at a 5% margin, so it needs a rate above about 0.105 to break even. Only trust a result on ticks that came AFTER the pair was chosen.")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--data-dir", default="outputs/history")
@@ -287,7 +306,11 @@ def main() -> int:
     ap.add_argument("--null-runs", type=int, default=60)
     ap.add_argument("--max-markets", type=int, default=20)
     ap.add_argument("--digits", nargs="+")
+    ap.add_argument("--pair", nargs=3, metavar=("SYMBOL", "PREV", "NEXT"), help="test one digit pair chosen in advance, e.g. CRASH500 2 3")
     a = ap.parse_args()
+    if a.pair:
+        run_pair(a.pair[0], int(a.pair[1]), int(a.pair[2]))
+        return 0
     if a.digits:
         run_digits(a.digits)
         return 0

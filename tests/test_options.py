@@ -80,3 +80,18 @@ class Tests(unittest.TestCase):
     def test_chi2_sf_matches_known_values(self):
         self.assertAlmostEqual(O.chi2_sf(16.919, 9), 0.05, places=3)
         self.assertAlmostEqual(O.chi2_sf(9.0, 9), 0.4372, places=3)
+
+
+class PairTests(unittest.TestCase):
+    def test_pair_report_counts_and_flags_a_planted_pair(self):
+        rng = np.random.default_rng(8)
+        d = rng.integers(0, 10, 20000)
+        for i in range(1, len(d)):
+            if d[i - 1] == 2 and rng.random() < 0.3:
+                d[i] = 3
+        r = O.pair_report(d, 2, 3)
+        self.assertGreater(r["rate"], 0.2)
+        self.assertLess(r["p_one_sided"], 0.001)
+        fair = O.pair_report(rng.integers(0, 10, 20000), 2, 3)
+        self.assertGreater(fair["p_one_sided"], 0.001)
+        self.assertEqual(fair["n"], int((fair["n"])))
